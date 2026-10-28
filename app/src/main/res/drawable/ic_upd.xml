@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Symbol fürs Kürzel „Update“: Pfeil nach unten in eine Schale, Outline auf dunklem Kreis -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp" android:height="48dp" android:viewportWidth="48" android:viewportHeight="48">
+    <path android:fillColor="#FF0E0F12" android:pathData="M24,0a24,24 0 1,0 0.01,0z" />
+    <path android:fillColor="#00000000" android:strokeColor="#FF27D9FF" android:strokeWidth="3"
+        android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M24,13v15M17,22l7,7 7,-7M14,32v3h20v-3" />
+</vector>

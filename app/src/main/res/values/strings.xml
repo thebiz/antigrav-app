@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sc_upd">Update</string>
+    <string name="sc_upd_long">Nach Update suchen</string>
+</resources>

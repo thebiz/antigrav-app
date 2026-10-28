@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Langes Drücken aufs App-Symbol: „Update“ sucht sofort nach einer neuen Version -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="update"
+        android:enabled="true"
+        android:icon="@drawable/ic_upd"
+        android:shortcutShortLabel="@string/sc_upd"
+        android:shortcutLongLabel="@string/sc_upd_long">
+        <intent
+            android:action="de.antigrav.app.UPDATE"
+            android:targetPackage="de.antigrav.app"
+            android:targetClass="de.antigrav.app.MainActivity" />
+    </shortcut>
+</shortcuts>
