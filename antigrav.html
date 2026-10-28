@@ -602,7 +602,7 @@ function agFxBuild(v,g,P,TT){const T=v.agT,out=T.fx,{ad,mu,nz}=agV;let n=0;const
   // Triebwerke aller Gleiter: Abgasstrahl, Glühen, Licht
   const ships=[];if(!(g.cam&&g.cam.hide))ships.push({S0:P.S0,SF:P.SF,SUp:P.SUp,SR:P.SR,b:g.boost||0,me:1});
   const TS=(performance.now()/1000)%3600;for(const o of g.opp||[]){const d=o.z-g.z;if(d<(g.rep?-30:-8)||d>80)continue;const q=agPoseOf(o.z+2.6,o.lat,o.roll,.16+.012*Math.sin(TS*2.7+(o.ai||0))+o.h,o.psi);ships.push({S0:q.S0,SF:q.SF,SUp:q.SUp,SR:q.SR,b:o.boost||0});}
-  for(const s of ships){const O=ad(s.S0,mu(s.SF,-.6),mu(s.SUp,.035)),b=Math.min(1.6,s.b),fl=.85+.15*Math.sin(now*.05+s.S0[2]);
+  for(const s of ships){const O=ad(s.S0,mu(s.SF,-.74),mu(s.SUp,.155))   /* Düsenmitte laut Modell: hinten bei z −0,74, Höhe 0,155 */,b=Math.min(1.6,s.b),fl=.85+.15*Math.sin(now*.05+s.S0[2]);
     const bb=Math.min(1,b),len=(.4+.5*bb)*fl,E=ad(O,mu(s.SF,-len)),E2=ad(O,mu(s.SF,-len*1.7));
     Q(O,E,.045+.012*bb,4,bb>.3?[.75,.95,1]:[.8,.7,1],1.3+.7*bb);Q(O,E2,.11+.03*bb,4,bb>.3?[.2,.7,1]:[.45,.25,1],.4+.3*bb);spr(O,.18+.05*bb,[.6,.45,1],.8+.5*bb);
     light(ad(O,mu(s.SUp,-.02),mu(s.SF,-.25)),mu(b>.3?[.3,.75,1]:[.55,.35,1],.9+1.6*b),2.2,s.me?9:2);}
