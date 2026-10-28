@@ -326,7 +326,9 @@ function vizAgGame(v,ts,val){if(!v.agg)v.agg=agNew();const g=v.agg;g.best=g.best
   for(let k=0;k<N;k++)phys(g,steer,true,hdt);g.cps=(g.cps||0)+(g.psi-(g.cps||0))*(1-Math.exp(-dt/.25));g.shield=Math.max(0,g.shield-dt);g.flash=Math.max(0,g.flash-dt*2);
   // Gegner: gleiche Physik, Regler hält Ideallinie, weicht Sperren aus, holt Boosts
   for(const o of g.opp){const inp=aiInp(o,YAW,false,val.steer??1);for(let k=0;k<N;k++)phys(o,inp,false,hdt);
-    const dz=o.z-g.z;o.sk=Math.max(.86,Math.min(1.08,(o.sk||1)+(dz>25?-.02:dz<-15?.02:0)*dt));
+    const dz=o.z-g.z;
+    // Gummiband (Normalmodus): wer hinten liegt, holt auf (bis +24 %), wer weit vorn ist, lässt etwas nach (bis −12 %) – man kann sich trotzdem Vorsprung erarbeiten
+    {const b0=o.sk0??(o.sk0=o.sk||1);let st=b0;if(racing){if(dz<-4)st=b0*(1+Math.min(.24,(-dz-4)*.0065));else if(dz>18)st=b0*(1-Math.min(.12,(dz-18)*.004));}o.sk=(o.sk||1)+(st-(o.sk||1))*(1-Math.exp(-dt/1.8));}
     if(Math.abs(dz)<1.4&&Math.abs(o.lat-g.lat)<.4&&racing&&!g.air&&!o.air){const pu=Math.sign(g.lat-o.lat||1);g.lat+=pu*.6*dt*6;o.lat-=pu*.6*dt*6;g.vpsi+=pu*.08;o.vpsi-=pu*.08;if(ts-(g.bumpT||0)>500){g.bumpT=ts;sf('bump');agBuzz(30);}}
     if(racing&&dz<0&&dz>-25&&Math.random()<dt*.02)g.shots.push({z:o.z+3.5,lat:o.lat,t:ts,tg:-1});}
   // Neonringe: beim Durchfliegen Klang und leichtes Zucken
