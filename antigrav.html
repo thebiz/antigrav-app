@@ -685,7 +685,8 @@ function vizShipDraw(v,tgt,val){const gl=v.gl,sh=vizShipLoad(v);const P=vizAgPos
 // AntiGrav – eigene App. Ab hier: Grundgerüst (Bildschleife, Himmel, Nachbearbeitung, Menü, Einstellungen, Updates)
 // =====================================================================================================
 const AG_SET_DEF={ctrl:0,speed:1,curvy:1,width:1,steer:1,bank:1,glow:1,sky:1};
-const AG_SET_L=[['speed','Tempo',.3,2,.01],['curvy','Kurvigkeit',.2,1.8,.01],['width','Streckenbreite',.7,1.5,.01],['bank','Kurvenlage',0,2,.01],['glow','Lichtstärke der Strecke',0,2,.01],['sky','Abend ↔ Nacht',0,1,.01],['steer','Gegner: Lenkgenauigkeit',.4,2,.01]];
+// Spannweiten wie in VIZ (dort waren die Regler weiter als angegeben), Tempo bis zum Vierfachen
+const AG_SET_L=[['speed','Tempo',.3,4,.01],['curvy','Kurvigkeit',.2,2.8,.01],['width','Streckenbreite',.6,2.1,.01],['bank','Kurvenlage',0,3.2,.01],['glow','Lichtstärke der Strecke',0,3.2,.01],['sky','Abend ↔ Nacht',0,1,.01],['steer','Gegner: Lenkgenauigkeit',.3,3.2,.01]];
 let AG_SET=(()=>{try{return Object.assign({},AG_SET_DEF,JSON.parse(localStorage.getItem('ag_set')||'{}'));}catch{return Object.assign({},AG_SET_DEF);}})();
 const agSaveSet=()=>{try{localStorage.setItem('ag_set',JSON.stringify(AG_SET));}catch{}};
 const $=id=>document.getElementById(id);
