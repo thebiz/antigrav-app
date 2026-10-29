@@ -145,7 +145,6 @@ function agAudio(v){if(v.agA)return v.agA;let C=null;try{C=new (window.AudioCont
     const noise=(f0,f1,d,g,type)=>{const s=C.createBufferSource();s.buffer=A.noise;const f=C.createBiquadFilter();f.type=type||'lowpass';f.frequency.setValueAtTime(f0,t);f.frequency.exponentialRampToValueAtTime(Math.max(30,f1),t+d);const gg=C.createGain();gg.gain.setValueAtTime(g,t);gg.gain.exponentialRampToValueAtTime(.001,t+d);s.connect(f);f.connect(gg);gg.connect(out);s.start(t);s.stop(t+d+.05);};
     if(k==='beep')tone(660,660,.18,'square',.25);else if(k==='go')tone(990,990,.5,'square',.3);
     else if(k==='rak'){noise(400,5000,.7,.6,'bandpass');tone(300,90,.6,'sawtooth',.25);}
-    else if(k==='ink'){noise(1600,90,1.3,1.1,'bandpass');tone(85,28,1.2,'sine',1.);noise(7000,700,.6,.35,'highpass');}
     else if(k==='boom'){noise(3000,80,.9,1.);tone(120,35,.7,'sine',.7);}
     else if(k==='mine'){tone(240,120,.15,'square',.3);noise(2000,500,.12,.3,'highpass');}
     else if(k==='pick'){[523,659,784,1047].forEach((f,i)=>{const o=C.createOscillator(),gg=C.createGain();o.type='triangle';o.frequency.value=f;gg.gain.setValueAtTime(0,t+i*.06);gg.gain.linearRampToValueAtTime(.25,t+i*.06+.01);gg.gain.exponentialRampToValueAtTime(.001,t+i*.06+.2);o.connect(gg);gg.connect(out);o.start(t+i*.06);o.stop(t+i*.06+.25);});}
@@ -644,11 +643,6 @@ function agFxBuild(v,g,P,TT){const T=v.agT,out=T.fx,{ad,mu,nz}=agV;let n=0;const
     const bb=Math.min(1,b),len=(.4+.5*bb)*fl,E=ad(O,mu(s.SF,-len)),E2=ad(O,mu(s.SF,-len*1.7));
     Q(O,E,.045+.012*bb,4,bb>.3?[.75,.95,1]:[.8,.7,1],1.3+.7*bb);Q(O,E2,.11+.03*bb,4,bb>.3?[.2,.7,1]:[.45,.25,1],.4+.3*bb);spr(O,.18+.05*bb,[.6,.45,1],.8+.5*bb);
     light(ad(O,mu(s.SUp,-.02),mu(s.SF,-.25)),mu(b>.3?[.3,.75,1]:[.55,.35,1],.9+1.6*b),2.2,s.me?9:2);}
-  // Tinten-Explosionen: Glutfunken fliegen nach außen und auf dich zu, Licht färbt die Strecke
-  agInkUpd(v,g,P,now);for(const b of (g.agInk&&g.agInk.on)||[]){const age=(now-b.t0)/1000,fr=1-Math.exp(-age*2.6),C=agWorld(b.zb,0,1.3),F=agFrame(b.zb),c=AG_INKC[b.pal],I=Math.max(0,Math.min(1,age*5,(5.5-age)/1.5)),sd=Math.round(b.zb);
-    for(let j=0;j<34;j++){const an=hs(j,sd)*6.283,rr=(2.5+5.5*fr)*(.25+.85*hs(j+3,sd)),dr=[Math.cos(an),Math.sin(an)*.75];const pos=ad(C,mu(F.rr,dr[0]*rr),mu(F.uu,dr[1]*rr),mu(F.fw,-age*(1.5+4*hs(j+5,sd))));
-      Q(pos,ad(pos,mu(F.rr,dr[0]*.5),mu(F.uu,dr[1]*.5)),.028,3,j%3?c[1]:c[0],2.6*I*(1-.5*fr));}
-    light(C,mu(c[1],(1+3*Math.exp(-age*1.2))*I),.05,9);}
   // Raketen mit Leuchtspur, Minen, Explosionen mit Blitzen und Funken
   for(const s of g.shots||[]){const p=agWorld(s.z,s.lat,.22);spr(p,.2,[1,.95,.8],3.2);spr(p,.7,[1,.45,.15],.7);
     const hst=s.hist||[[s.z-2.4,s.lat],[s.z-1.2,s.lat]];let pp=p;for(let i=hst.length-1;i>=0;i--){const q=agWorld(hst[i][0],hst[i][1],.22),f=1-(hst.length-1-i)/hst.length;Q(pp,q,.035,3,[1,.95,.85],2.2*f);Q(pp,q,.09,3,[1,.5,.15],1.4*f);Q(pp,q,.3,3,[1,.25,.05],.22*f);pp=q;}
@@ -707,45 +701,6 @@ function vizAgFx(v,P){const gl=v.gl,T=v.agT,FX=v.agFX;if(!T||T.bad||!FX||!FX.n)r
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,T.fi);gl.drawElements(gl.TRIANGLES,FX.n*6,gl.UNSIGNED_SHORT,0);
   for(let i=1;i<4;i++)gl.disableVertexAttribArray(i);gl.depthMask(true);gl.disable(gl.BLEND);}
 
-
-// ---------- Tinten-Explosionen (wie Makro-Aufnahmen von Tinte): blühen vor dir über der Strecke auf, du fliegst mitten hindurch
-const AG_INK=[65,265,380,600],AG_INKP=[0,1,0,2];   // Stelle in der Runde, Farbe: 0 Gold, 1 Violett, 2 Glutringe
-const AG_INKC=[[[1,.95,.8],[1,.55,.12],[.22,.05,.01]],[[.85,.9,1],[.5,.35,1],[.07,.03,.2]],[[1,.8,.5],[1,.25,.05],[.1,.01,0]]];
-const AG_IVS=`precision highp float;attribute vec2 p;uniform vec3 C,RO,CF,CR,CU;uniform float FOV,A,S;varying vec2 q;
-void main(){q=p;vec3 w=C+(CR*p.x+CU*p.y)*S;vec3 v=w-RO;float z=dot(v,CF);const float n=.1,f=220.;gl_Position=vec4(dot(v,CR)*FOV*2./A,dot(v,CU)*FOV*2.,(f+n)/(f-n)*z-2.*f*n/(f-n),z);}`;
-const AG_IFS=`precision highp float;varying vec2 q;uniform float AGE,SEED,PAL,FADE;uniform vec3 C1,C2,C3;
-float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
-float ns(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h(i),h(i+vec2(1.,0.)),f.x),mix(h(i+vec2(0.,1.)),h(i+vec2(1.,1.)),f.x),f.y);}
-float fb(vec2 p){float s=0.,a=.5;for(int i=0;i<4;i++){s+=a*ns(p);p=p*2.03+vec2(1.7,9.2);a*=.5;}return s;}
-void main(){float r=length(q);if(r>1.)discard;float an=atan(q.y,q.x);
- float fr=1.-exp(-AGE*2.6);float ed=fr*(.72+.28*fb(vec2(an*2.6+SEED,AGE*.5)));float x=r/max(ed,.001);
- float fil=fb(vec2(an*15.+SEED*3.,r*3.-AGE*1.6));float fl2=ns(vec2(an*70.+SEED,r*9.-AGE*2.));
- float body=smoothstep(1.12,.7,x+(fil-.5)*.6);
- float tend=smoothstep(.55,.95,fl2)*smoothstep(1.45,.95,x)*smoothstep(.75,1.,x);
- float heat=clamp(1.25-x*.95+(fil-.5)*.7,0.,1.)*(1.-.55*smoothstep(.4,2.4,AGE));
- vec3 col=mix(C3,C2,smoothstep(.15,.55,heat));col=mix(col,C1,smoothstep(.72,1.,heat));
- float rg=PAL>1.5?.25+.75*pow(.5+.5*sin(r*26.-AGE*7.+fil*7.),2.):1.;
- float a=clamp((body*(.45+.65*fil)+tend*.9)*rg,0.,1.)*FADE*smoothstep(1.,.85,r);
- float core=exp(-r*r/(.004+.05*fr))*exp(-AGE*.9);
- vec3 em=col*(heat*1.15+.12)*a+C1*core*1.8*FADE;
- if(PAL>.5&&PAL<1.5)em+=C1*FADE*exp(-AGE*.9)*(exp(-abs(q.x)*90.)*exp(-abs(q.y)*3.)+exp(-abs(q.y)*90.)*exp(-abs(q.x)*3.))*1.4;   // Lichtstern
- gl_FragColor=vec4(em,a*.55);}`;
-// welche Explosionen gerade leben; Auslösen, wenn du in gut einer Sekunde dort bist
-function agInkUpd(v,g,P,now){if(!g||!g.agInk)g&&(g.agInk={on:[],done:{}});const S=g.agInk,zs=g.z+2.6,sp=Math.max(g.spd||0,0);
-  if(sp>1&&g.st!=='intro'){const L0=Math.floor((zs-AG_ZST)/AG_LAP);for(let L=L0;L<=L0+1;L++)AG_INK.forEach((b,i)=>{const zb=b+L*AG_LAP,d=zb-zs;if(d>0&&d<sp*1.25+4&&!S.done[zb]){S.done[zb]=1;S.on.push({zb,t0:now,pal:AG_INKP[i],seed:(zb*.137)%7.3});}});}
-  const cz=P.ro[2];for(const b of S.on){if(!b.pass&&cz>=b.zb){b.pass=now;v.inkPass={t:now,pal:b.pal};
-      if(!g.rep&&v.state==='game'){try{v.agA&&v.agA.sfx&&v.agA.sfx('ink');}catch{}agVib([30,20,60]);g.shake=Math.max(g.shake||0,.7);}}}
-  S.on=S.on.filter(b=>now-b.t0<6000&&(!b.pass||now-b.pass<300));}
-function agInkDraw(v,P,g){const S=g&&g.agInk;if(!S||!S.on.length)return;const gl=v.gl;
-  if(!v.inkP){try{v.inkP=agMkProg(gl,AG_IVS,AG_IFS,['p']);}catch(e){dl('Explosion: '+e.message);v.inkP={bad:1};}}const K=v.inkP;if(K.bad)return;
-  const u=K.u,now=performance.now();gl.useProgram(K.pg);const s3=(k,x)=>gl.uniform3f(u[k],x[0],x[1],x[2]);s3('RO',P.ro);s3('CF',P.cf);s3('CR',P.cr);s3('CU',P.cu);gl.uniform1f(u.FOV,P.fov);gl.uniform1f(u.A,innerWidth/innerHeight);
-  gl.bindBuffer(gl.ARRAY_BUFFER,v.qbuf);gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,2,gl.FLOAT,false,0,0);
-  gl.enable(gl.DEPTH_TEST);gl.depthMask(false);gl.enable(gl.BLEND);gl.blendFunc(gl.ONE,gl.ONE_MINUS_SRC_ALPHA);
-  for(const b of S.on.slice().sort((x,y)=>y.zb-x.zb)){const age=(now-b.t0)/1000,C=agWorld(b.zb,0,1.3),d=b.zb-P.ro[2];if(d<.25)continue;
-    const fd=Math.min(1,age*6)*Math.min(1,(d-.25)/1.4)*Math.max(0,Math.min(1,(5.5-age)/1.5));
-    s3('C',C);gl.uniform1f(u.S,2.5+5.5*(1-Math.exp(-age*2.6)));gl.uniform1f(u.AGE,age);gl.uniform1f(u.SEED,b.seed);gl.uniform1f(u.PAL,b.pal);gl.uniform1f(u.FADE,fd);
-    const c=AG_INKC[b.pal];s3('C1',c[0]);s3('C2',c[1]);s3('C3',c[2]);gl.drawArrays(gl.TRIANGLE_STRIP,0,4);}
-  gl.depthMask(true);gl.disable(gl.BLEND);}
 function vizShipDraw(v,tgt,val){const gl=v.gl;let SP=null;try{SP=vizShipProg(v);}catch(e){if(!v.shipErr){v.shipErr=1;dl('Gleiter-Shader: '+e.message);}}AG_SHIPS.forEach((_,i)=>vizShipModel(v,i));const P=vizAgPose(v,val),u=SP&&SP.u;
   if(tgt.f&&(!tgt.db||tgt.dbw!==tgt.w||tgt.dbh!==tgt.h)){if(!tgt.db)tgt.db=gl.createRenderbuffer();gl.bindRenderbuffer(gl.RENDERBUFFER,tgt.db);gl.renderbufferStorage(gl.RENDERBUFFER,gl.DEPTH_STENCIL,tgt.w,tgt.h);tgt.dbw=tgt.w;tgt.dbh=tgt.h;
     gl.bindFramebuffer(gl.FRAMEBUFFER,tgt.f);gl.framebufferRenderbuffer(gl.FRAMEBUFFER,gl.DEPTH_STENCIL_ATTACHMENT,gl.RENDERBUFFER,tgt.db);}
@@ -766,7 +721,7 @@ function vizShipDraw(v,tgt,val){const gl=v.gl;let SP=null;try{SP=vizShipProg(v);
     gl.uniform1f(u.HM,m.tm?1:0);gl.uniform1f(u.HE,m.te?1:0);gl.uniform1f(u.EMF,m.emf[0]);gl.uniform1f(u.ALP,m.bcf[3]);gl.uniform1f(u.MET,m.met);gl.uniform1f(u.ROU,m.rough);gl.uniform1f(u.ADD,add?1:0);gl.uniform1f(u.ISJ,p.jet?1:0);
     gl.bindBuffer(gl.ARRAY_BUFFER,p.pos);gl.vertexAttribPointer(0,3,gl.FLOAT,false,0,0);gl.bindBuffer(gl.ARRAY_BUFFER,p.nrm);gl.vertexAttribPointer(1,3,gl.FLOAT,false,0,0);gl.bindBuffer(gl.ARRAY_BUFFER,p.uv);gl.vertexAttribPointer(2,2,gl.FLOAT,false,0,0);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,p.ib);gl.drawElements(gl.TRIANGLES,p.ni,gl.UNSIGNED_SHORT,0);}}}
-  gl.depthMask(true);gl.disable(gl.BLEND);agInkDraw(v,P,v.agg);vizAgFx(v,P);
+  gl.depthMask(true);gl.disable(gl.BLEND);vizAgFx(v,P);
   gl.depthMask(true);gl.disable(gl.DEPTH_TEST);gl.disable(gl.BLEND);gl.disableVertexAttribArray(1);gl.disableVertexAttribArray(2);
   gl.bindBuffer(gl.ARRAY_BUFFER,v.qbuf);gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,2,gl.FLOAT,false,0,0);if(v.dtex){gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,v.dtex);}}
 
@@ -795,18 +750,12 @@ const AG_SKY_FS='precision highp float;varying vec2 uv;uniform float A,p_sky;\n'
  'float fbm(vec2 p){float s=0.,a=.5;for(int i=0;i<5;i++){s+=a*noise(p);p=p*2.03+vec2(1.7,9.2);a*=.5;}return s;}\n'+
  'vec2 cuv(){return (uv-.5)*vec2(A,1.);}\n'+AG_SKY_SRC;
 // Nachbearbeitung: Lichtschein um Helles, Geschwindigkeits-Wölbung mit Zoom-Unschärfe und Farbversatz, leichte Vignette
-const AG_POST_FS=`precision highp float;varying vec2 uv;uniform sampler2D S;uniform float WRP,GLW,INK,INKA;uniform vec3 IC1,IC2,IC3;
-float ih(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
-float inn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(ih(i),ih(i+vec2(1.,0.)),f.x),mix(ih(i+vec2(0.,1.)),ih(i+vec2(1.,1.)),f.x),f.y);}
+const AG_POST_FS=`precision highp float;varying vec2 uv;uniform sampler2D S;uniform float WRP,GLW;
 void main(){vec2 u2=uv;
  if(WRP>.01){vec2 wd=u2-.5;float r2=dot(wd*vec2(1.,1.6),wd*vec2(1.,1.6));u2=.5+wd*(1.-WRP*.16*r2*2.2);}
  vec3 col=texture2D(S,u2).rgb;
  if(WRP>.01){vec2 wd=u2-.5;float ed=smoothstep(.08,.5,length(wd*vec2(1.,1.4)));vec3 zb=vec3(0.);for(int i=1;i<7;i++){float f=1.-float(i)*.021*WRP;zb+=vec3(texture2D(S,.5+wd*(f-.004*WRP)).r,texture2D(S,.5+wd*f).g,texture2D(S,.5+wd*(f+.004*WRP)).b);}col=mix(col,zb/6.,.85*WRP*ed);}
  vec3 bs=vec3(0.);for(int i=0;i<8;i++){float a=float(i)*.785398+.39;vec2 o=vec2(cos(a),sin(a)*.55)*.012;bs+=max(texture2D(S,uv+o).rgb-.55,0.)+max(texture2D(S,uv+o*2.4).rgb-.55,0.)*.7;}col+=bs*.085*GLW;
- if(INK>.01){vec2 wd=(uv-.5)*vec2(1.,1.8);float r=length(wd),an=atan(wd.y,wd.x);float lr=log(r+.03);
-  float st=inn(vec2(an*11.,lr*2.6-INKA*7.))*.6+inn(vec2(an*37.,lr*5.-INKA*11.))*.4;float m=smoothstep(.05,.55,r)*smoothstep(.3,.75,st+.15*(1.-INKA));
-  vec3 ic=mix(IC3,IC2,smoothstep(.35,.8,st));ic=mix(ic,IC1,smoothstep(.85,1.,st)*(1.-INKA));
-  col=mix(col,col*.35+ic*(.4+1.3*st),INK*m)+IC1*INK*exp(-r*r*10.)*(1.-INKA)*1.4;}
  vec2 vg=uv-.5;col*=1.-.35*dot(vg,vg);
  gl_FragColor=vec4(col,1.);}`;
 const agQuad=(fs)=>agMkProg(gl,AG_QVS,fs,['p']);
@@ -845,9 +794,7 @@ function agFrame60(ts){requestAnimationFrame(agFrame60);if(!AG_SKYP)return;
   vizShipDraw(v,tgt,val);
   // aufs Display
   gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,cv.width,cv.height);gl.useProgram(AG_POSTP.pg);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tgt.t);
-  gl.uniform1i(AG_POSTP.u.S,0);{const ip=v.inkPass,ia=ip?(performance.now()-ip.t)/1000:9,ik=ia<1.1?Math.min(1,ia*14)*Math.exp(-ia*2.6):0,c=AG_INKC[ip?ip.pal:0];
-   gl.uniform1f(AG_POSTP.u.INK,ik);gl.uniform1f(AG_POSTP.u.INKA,Math.min(1,ia));gl.uniform3f(AG_POSTP.u.IC1,...c[0]);gl.uniform3f(AG_POSTP.u.IC2,...c[1]);gl.uniform3f(AG_POSTP.u.IC3,...c[2]);
-   gl.uniform1f(AG_POSTP.u.WRP,Math.max(v.state==='game'?(g&&g.warp||0):0,ik*.9));}gl.uniform1f(AG_POSTP.u.GLW,1);agQuadDraw();}
+  gl.uniform1i(AG_POSTP.u.S,0);gl.uniform1f(AG_POSTP.u.WRP,v.state==='game'?(g&&g.warp||0):0);gl.uniform1f(AG_POSTP.u.GLW,1);agQuadDraw();}
 requestAnimationFrame(agFrame60);
 
 // ---- Spiel starten / beenden
