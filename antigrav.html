@@ -19,6 +19,9 @@ button{font:inherit;color:inherit;cursor:pointer}
 #menu .btn.go{background:#ed682f;border-color:#ffb38a;font-size:20px;letter-spacing:.1em;box-shadow:0 0 26px rgba(237,104,47,.55)}#menu .two{display:flex;gap:10px;width:min(100%,420px)}#menu .two .btn{flex:1}
 #mship{display:flex;align-items:center;gap:10px;width:min(100%,420px);margin-bottom:8px}#mship>button{width:56px;height:56px;flex:none;border-radius:16px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.08);font-size:28px;line-height:1;font-weight:700;padding:0}
 #mship>div{flex:1;text-align:center}#mship b{display:block;font-size:11px;letter-spacing:.3em;opacity:.6;font-weight:600}#mship span{display:block;font-size:24px;font-weight:900;letter-spacing:.12em;font-style:italic;text-transform:uppercase;text-shadow:0 0 16px rgba(0,200,255,.6)}#mship i{display:block;font-style:normal;font-size:11px;opacity:.45;margin-top:1px;font-variant-numeric:tabular-nums}
+#mtrk{display:flex;align-items:center;gap:10px;width:min(100%,420px);margin-bottom:6px}#mtrk>button{width:56px;height:42px;flex:none;border-radius:13px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);font-size:22px;line-height:1;font-weight:700;padding:0}
+#mtrk>div{flex:1;text-align:center}#mtrk b{display:block;font-size:10px;letter-spacing:.3em;opacity:.55;font-weight:600}#mtrk span{display:block;font-size:16px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+body.toy .vz-game .vzg-top,body.toy .vz-game .vzg-gd,body.toy #menu .sub,body.toy #mship,body.toy #mtrk{text-shadow:0 1px 3px rgba(60,20,50,.75),0 0 12px rgba(60,20,50,.45)}body.toy #menu{background:linear-gradient(180deg,rgba(40,10,40,.35),rgba(0,0,0,0) 28%,rgba(0,0,0,0) 45%,rgba(30,10,30,.55))}
 #menu .ver{margin-top:12px;font-size:11px;opacity:.45}#menu .cr{font-size:10px;opacity:.35;margin-top:4px;text-align:center}
 #set,#dlg{position:fixed;inset:0;z-index:8;background:rgba(4,5,8,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:18px}
 #set .box,#dlg .box{width:min(100%,440px);max-height:92vh;overflow:auto;background:rgba(14,16,22,.96);border:1px solid rgba(255,255,255,.14);border-radius:20px;padding:16px 18px}
@@ -30,8 +33,9 @@ button{font:inherit;color:inherit;cursor:pointer}
 #toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 120px);transform:translateX(-50%) translateY(10px);background:rgba(14,16,22,.92);border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:10px 16px;font-size:14px;z-index:9;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;max-width:86vw;text-align:center}#toast.on{opacity:1;transform:translateX(-50%)}
 </style></head><body>
 <div id="app"><canvas id="cv"></canvas></div>
-<div id="menu"><h1>ANTI<span>GRAV</span></h1><div class="sub">ANTIGRAVITY RACING AT NIGHT</div>
+<div id="menu"><h1>ANTI<span>GRAV</span></h1><div class="sub" id="msub">ANTIGRAVITY RACING AT NIGHT</div>
  <div id="mship"><button type="button" id="mshp" aria-label="Previous ship">‹</button><div><b>SHIP</b><span id="mshn"></span><i id="mshi"></i></div><button type="button" id="mshx" aria-label="Next ship">›</button></div>
+ <div id="mtrk"><button type="button" id="mtkp" aria-label="Previous track">‹</button><div><b>TRACK</b><span id="mtkn"></span></div><button type="button" id="mtkx" aria-label="Next track">›</button></div>
  <button type="button" class="btn go" id="mstart">START RACE</button>
  <div class="two"><button type="button" class="btn" id="msolo">Solo</button><button type="button" class="btn" id="mhsb">Leaderboard</button><button type="button" class="btn" id="mset">Settings</button></div>
  <div class="ver" id="mver"></div><div class="cr" id="mcr"></div></div>
@@ -40,7 +44,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 
 const NV=window.AgNative||{};
 const agVib=p=>{try{if(NV.vibrate){NV.vibrate(String([].concat(p).map(x=>Math.round(x)).join(',')));return;}navigator.vibrate&&navigator.vibrate(p);}catch{}};
-const AG_SKY_SRC="// Antigrav: Himmel (Strecke, Gleiter und Leuchteffekte werden danach als 3D-Modelle dr\u00fcbergezeichnet)\nuniform float AGZ,AGT,AGFV;uniform vec3 AGRO,AGTA,AGUP;vec3 SUN;\nvec3 sky(vec3 rd,bool full){float h=rd.y,nt=p_sky;float sd=max(0.,dot(rd,SUN));\n vec3 hor=mix(vec3(1.,.5,.26),vec3(.035,.04,.07),nt),top=mix(vec3(.12,.17,.36),vec3(.002,.003,.01),nt),mid=mix(vec3(.62,.32,.42),vec3(.012,.014,.03),nt);\n vec3 c=mix(hor,mid,smoothstep(.0,.12,h));c=mix(c,top,smoothstep(.1,.55,h));\n c+=vec3(1.,.6,.3)*pow(sd,10.)*.22*(1.-nt)+vec3(1.,.82,.55)*pow(sd,1400.)*5.*(1.-nt);\n // Nacht: Sterne, Mond, Milchstra\u00dfen-Schleier\n if(nt>.01&&h>-.02){vec2 sp=vec2(atan(rd.x,rd.z)*90.,h*160.);vec2 ci=floor(sp);float st=step(.985,hash(ci))*smoothstep(.0,.08,h);float tw=.6+.4*sin(AGT*(2.+hash(ci+3.)*4.)+hash(ci)*20.);\n  c+=vec3(.75,.8,1.)*st*tw*(.35+.65*hash(ci+7.))*nt*(1.-step(.5,length(fract(sp)-.5)*2.));\n  vec3 md=normalize(vec3(.5,.32,.8));float mo=dot(rd,md);c+=vec3(.85,.9,1.)*smoothstep(.9994,.9997,mo)*nt+vec3(.25,.3,.45)*pow(max(0.,mo),60.)*.25*nt;\n  c+=vec3(.05,.05,.09)*fbm(vec2(atan(rd.x,rd.z)*3.,h*6.)+3.)*smoothstep(.05,.4,h)*smoothstep(.9,.3,abs(rd.x-.3))*nt;}\n if(full&&h>.01){vec2 cu=rd.xz/(h+.06)*.55;float cl=fbm(cu*vec2(1.,3.)+vec2(0.,AGT*.01));cl=smoothstep(.5,.85,cl)*smoothstep(.01,.12,h)*(1.-smoothstep(.35,.7,h));\n  vec3 cc=mix(mix(vec3(1.,.55,.35),vec3(.03,.035,.06),nt),vec3(.95,.75,.6),pow(sd,3.)*(1.-nt));c=mix(c,cc*.9,cl*.75);}\n // Gebirgsketten: fern hell im Dunst, nah dunkler, Grate vom Abendlicht gestreift\n float an=atan(rd.x,rd.z);\n for(int k=0;k<3;k++){float fk=float(k);float fr=1.6+fk*1.7;\n  float mh=.015+.05*(1.-fk*.25)*fbm(vec2(an*fr+fk*7.3,fk*3.1))+.035*fk*noise(vec2(an*fr*3.,fk));mh-=.025*fk;\n  if(h<mh){float hz=.75-fk*.28;vec3 mc=mix(mix(vec3(.12,.08,.14),vec3(.004,.005,.01),nt),hor*.9,hz*(1.-nt*.6));\n   mc+=mix(vec3(1.,.55,.3),vec3(.2),nt)*smoothstep(mh-.006,mh,h)*pow(sd,2.)*.6*(1.-fk*.3);c=mc;}}\n // unter dem Horizont: Talnebel, Sonne spiegelt sich darin\n if(h<-.02){float fd=smoothstep(-.02,-.35,h);c=mix(c,mix(hor*.55,mix(vec3(.05,.05,.09),vec3(.01,.01,.02),nt),fd),smoothstep(-.02,-.06,h));\n  c+=vec3(1.,.6,.3)*pow(max(0.,dot(normalize(vec3(rd.x,-rd.y,rd.z)),SUN)),30.)*.3*(1.-nt)*(1.-fd);}\n return c;}\nvoid main(){vec2 c0=cuv();SUN=normalize(vec3(-.4,.07,1.));vec3 cf=normalize(AGTA-AGRO),cr=normalize(cross(AGUP,cf)),cu=cross(cf,cr);\n vec3 rd=normalize(cf*max(AGFV,.5)+cr*c0.x+cu*c0.y);vec3 col=sky(rd,true)*mix(1.,.4,p_sky);if(AGZ>99.)col=vec3(1.);\n col=(col*(2.51*col+.03))/(col*(2.43*col+.59)+.14);gl_FragColor=vec4(pow(clamp(col,0.,1.),vec3(.95)),1.);}\n";
+const AG_SKY_SRC="// Antigrav: Himmel (Strecke, Gleiter und Leuchteffekte werden danach als 3D-Modelle dr\u00fcbergezeichnet)\nuniform float AGZ,AGT,AGFV;uniform vec3 AGRO,AGTA,AGUP;vec3 SUN;\nvec3 skyToy(vec3 rd){float h=rd.y,an=atan(rd.x,rd.z);vec3 hor=vec3(.99,.88,.9),mid=vec3(.94,.8,.95),top=vec3(.6,.78,.99);\n vec3 c=mix(hor,mid,smoothstep(0.,.16,h));c=mix(c,top,smoothstep(.12,.62,h));\n vec3 sd=normalize(vec3(.35,.24,1.));float s=dot(rd,sd);c+=vec3(1.,.85,.75)*pow(max(0.,s),30.)*.25;c=mix(c,vec3(1.,.98,.92),smoothstep(.9986,.9992,s));\n if(h>0.){vec2 cu=rd.xz/(h+.08)*.5;float cl=fbm(cu*1.3+vec2(AGT*.006,0.));float m=smoothstep(.5,.6,cl)*smoothstep(.0,.07,h)*(1.-smoothstep(.45,.75,h));\n  c=mix(c,mix(vec3(1.,.9,.95),vec3(1.),smoothstep(.55,.72,cl)),m*.92);}\n float fa=an+.55,fh=min(.13-abs(fa)*.4,.115);if(fh>0.&&h<fh){float sn=smoothstep(.074,.08,h+.008*sin(fa*80.));c=mix(mix(vec3(.62,.64,.9),vec3(.99,.98,1.),sn),hor,.22);}\n for(int k=0;k<2;k++){float fk=float(k);float mh=.018+.032*fbm(vec2(an*(2.2+fk*1.6)+fk*5.,fk*2.))-.012*fk;if(h<mh)c=mix(k==0?vec3(.8,.74,.96):vec3(.68,.9,.8),hor,.3-.12*fk);}\n if(h<0.)c=mix(c,vec3(.98,.88,.9),smoothstep(0.,-.02,h));return c;}\nvec3 sky(vec3 rd,bool full){if(TH>.5)return skyToy(rd);float h=rd.y,nt=p_sky;float sd=max(0.,dot(rd,SUN));\n vec3 hor=mix(vec3(1.,.5,.26),vec3(.035,.04,.07),nt),top=mix(vec3(.12,.17,.36),vec3(.002,.003,.01),nt),mid=mix(vec3(.62,.32,.42),vec3(.012,.014,.03),nt);\n vec3 c=mix(hor,mid,smoothstep(.0,.12,h));c=mix(c,top,smoothstep(.1,.55,h));\n c+=vec3(1.,.6,.3)*pow(sd,10.)*.22*(1.-nt)+vec3(1.,.82,.55)*pow(sd,1400.)*5.*(1.-nt);\n // Nacht: Sterne, Mond, Milchstra\u00dfen-Schleier\n if(nt>.01&&h>-.02){vec2 sp=vec2(atan(rd.x,rd.z)*90.,h*160.);vec2 ci=floor(sp);float st=step(.985,hash(ci))*smoothstep(.0,.08,h);float tw=.6+.4*sin(AGT*(2.+hash(ci+3.)*4.)+hash(ci)*20.);\n  c+=vec3(.75,.8,1.)*st*tw*(.35+.65*hash(ci+7.))*nt*(1.-step(.5,length(fract(sp)-.5)*2.));\n  vec3 md=normalize(vec3(.5,.32,.8));float mo=dot(rd,md);c+=vec3(.85,.9,1.)*smoothstep(.9994,.9997,mo)*nt+vec3(.25,.3,.45)*pow(max(0.,mo),60.)*.25*nt;\n  c+=vec3(.05,.05,.09)*fbm(vec2(atan(rd.x,rd.z)*3.,h*6.)+3.)*smoothstep(.05,.4,h)*smoothstep(.9,.3,abs(rd.x-.3))*nt;}\n if(full&&h>.01){vec2 cu=rd.xz/(h+.06)*.55;float cl=fbm(cu*vec2(1.,3.)+vec2(0.,AGT*.01));cl=smoothstep(.5,.85,cl)*smoothstep(.01,.12,h)*(1.-smoothstep(.35,.7,h));\n  vec3 cc=mix(mix(vec3(1.,.55,.35),vec3(.03,.035,.06),nt),vec3(.95,.75,.6),pow(sd,3.)*(1.-nt));c=mix(c,cc*.9,cl*.75);}\n // Gebirgsketten: fern hell im Dunst, nah dunkler, Grate vom Abendlicht gestreift\n float an=atan(rd.x,rd.z);\n for(int k=0;k<3;k++){float fk=float(k);float fr=1.6+fk*1.7;\n  float mh=.015+.05*(1.-fk*.25)*fbm(vec2(an*fr+fk*7.3,fk*3.1))+.035*fk*noise(vec2(an*fr*3.,fk));mh-=.025*fk;\n  if(h<mh){float hz=.75-fk*.28;vec3 mc=mix(mix(vec3(.12,.08,.14),vec3(.004,.005,.01),nt),hor*.9,hz*(1.-nt*.6));\n   mc+=mix(vec3(1.,.55,.3),vec3(.2),nt)*smoothstep(mh-.006,mh,h)*pow(sd,2.)*.6*(1.-fk*.3);c=mc;}}\n // unter dem Horizont: Talnebel, Sonne spiegelt sich darin\n if(h<-.02){float fd=smoothstep(-.02,-.35,h);c=mix(c,mix(hor*.55,mix(vec3(.05,.05,.09),vec3(.01,.01,.02),nt),fd),smoothstep(-.02,-.06,h));\n  c+=vec3(1.,.6,.3)*pow(max(0.,dot(normalize(vec3(rd.x,-rd.y,rd.z)),SUN)),30.)*.3*(1.-nt)*(1.-fd);}\n return c;}\nvoid main(){vec2 c0=cuv();SUN=normalize(vec3(-.4,.07,1.));vec3 cf=normalize(AGTA-AGRO),cr=normalize(cross(AGUP,cf)),cu=cross(cf,cr);\n vec3 rd=normalize(cf*max(AGFV,.5)+cr*c0.x+cu*c0.y);vec3 col=sky(rd,true)*mix(1.,.4,p_sky);if(AGZ>99.)col=vec3(1.);\n if(TH<.5)col=(col*(2.51*col+.03))/(col*(2.43*col+.59)+.14);gl_FragColor=vec4(pow(clamp(col,0.,1.),vec3(.95)),1.);}\n";
 // ---------- Antigrav: echte 3D-Modelle der Gleiter (Dateien ship-*.bin, aus glTF umgepackt) ----------
 // Pose und Kamera werden exakt wie im Strecken-Shader gerechnet, das Modell wird danach mit Tiefenpuffer drübergezeichnet.
 const VZ_SHIP_VS=`precision highp float;attribute vec3 p,nn;attribute vec2 tc;uniform vec3 S0,SR,SU,SF,RO,CF,CR,CU;uniform float FOV,A,JET,ISJ;varying vec2 vt;varying vec3 vn,vw;
@@ -96,12 +100,19 @@ function vizShipModel(v,i){const gl=v.gl;v.ships=v.ships||[];i=agShipIx(i);if(v.
 const AG_ZST=20,AG_LAP=700,AG_NL=3,AG_ZFI=AG_ZST+AG_NL*AG_LAP;
 // Strecke – exakt wie im Shader: Rundkurs, lange Geraden, weite Kurven (Kurvigkeit pc, Breite über TW)
 const agLz=z=>((z-20)%700+700)%700+20,agS=u=>{u=Math.max(0,Math.min(1,u));return u*u*u*(u*(u*6-15)+10);},agS1=u=>u<0||u>1?0:30*u*u*(u-1)*(u-1),agS2=u=>u<0||u>1?0:60*u*(u-1)*(2*u-1);
-const AG_SEG=[[80,120,18],[240,140,-26],[420,110,14],[560,110,-6]];
+// Zwei Strecken: Kurven [Start, Länge, seitlich] (Summe 0, damit die Runde schließt), Hügel [Höhe, Wellen pro Runde, Phase]
+const AG_TRACKS=[
+ {id:'neon',nm:'Neon Night',seg:[[80,120,18],[240,140,-26],[420,110,14],[560,110,-6]],hill:[[2.4,2,0],[.8,5,1]]},
+ {id:'sakura',nm:'Sakura Toys',seg:[[60,100,-14],[180,110,22],[300,100,-12],[425,120,20],[575,110,-16]],hill:[[2.8,2,1.2],[1.1,7,.4]]}];
+let AG_TRK=0,AG_SEG=AG_TRACKS[0].seg,AG_HILL=AG_TRACKS[0].hill;
+const agTrkIx=i=>Math.max(0,Math.min(AG_TRACKS.length-1,Math.round(+i||0)));
+function agTrkApply(i){AG_TRK=agTrkIx(i);AG_SEG=AG_TRACKS[AG_TRK].seg;AG_HILL=AG_TRACKS[AG_TRK].hill;}
+const agK=k=>AG_TRK?k+'_'+AG_TRACKS[AG_TRK].id:k;   // Bestzeiten, Rangliste und Geist je Strecke
 const AGT_={pc:1,tw:2.1,bkf:1,
   px:z=>{const l=agLz(z);let r=0;for(const [a,n,d] of AG_SEG)r+=d*agS((l-a)/n);return AGT_.pc*r;},
   dpx:z=>{const l=agLz(z);let r=0;for(const [a,n,d] of AG_SEG)r+=d/n*agS1((l-a)/n);return AGT_.pc*r;},
   d2px:z=>{const l=agLz(z);let r=0;for(const [a,n,d] of AG_SEG)r+=d/(n*n)*agS2((l-a)/n);return AGT_.pc*r;},
-  py:z=>{const l=z-20;return 2.4*Math.sin(l*.017951958)+.8*Math.sin(l*.044879895+1);},dpy:z=>{const l=z-20;return 2.4*.017951958*Math.cos(l*.017951958)+.8*.044879895*Math.cos(l*.044879895+1);},
+  py:z=>{const l=z-20;let r=0;for(const [a,k,f] of AG_HILL)r+=a*Math.sin(l*k*.0089759790+f);return r;},dpy:z=>{const l=z-20;let r=0;for(const [a,k,f] of AG_HILL)r+=a*k*.0089759790*Math.cos(l*k*.0089759790+f);return r;},
   rmp:z=>{z=agLz(z);const Jn=Math.ceil((z-60)/350)*350+60;if(Jn<300||Jn>700)return 0;const u=Math.max(0,Math.min(1,(z-(Jn-10))/10));return .45*u*u;},
   gap:z=>{z=agLz(z);const J=Math.floor((z-60)/350)*350+60;if(J<300)return false;return z>J&&z<J+7;}};
 AGT_.bk=z=>Math.max(-.6,Math.min(.6,-AGT_.d2px(z)*60))*AGT_.bkf;
@@ -209,7 +220,7 @@ function vizAgHud(v){let h=v.dlg.querySelector('.vz-game');if(!h){h=document.cre
    res.addEventListener('click',e=>{const a=e.target.dataset.r;if(!a)return;const g0=v.agg;
      if(a==='hsok'&&g0){const inp=res.querySelector('input');const nm=(inp&&inp.value.trim()||'Pilot').slice(0,14);try{localStorage.setItem('vz_ag_name',nm);}catch{}
        const H=agHS(),M={},d=Date.now();for(const k of ['race','lap']){const t=g0.hsAsk[k];if(!t)continue;H[k].push({n:nm,t,d});H[k].sort((x,y)=>x.t-y.t);H[k]=H[k].slice(0,10);M[k]=H[k].findIndex(x=>x.d===d&&x.t===t);}
-       try{localStorage.setItem('vz_ag_hs',JSON.stringify(H));}catch{}g0.hsMine=M;g0.hsDone=true;g0.hsForm=false;g0.view='hs';try{inp&&inp.blur();}catch{}agResDraw(g0,res);return;}
+       try{localStorage.setItem(agK('vz_ag_hs'),JSON.stringify(H));}catch{}g0.hsMine=M;g0.hsDone=true;g0.hsForm=false;g0.view='hs';try{inp&&inp.blur();}catch{}agResDraw(g0,res);return;}
      if(a==='hs'&&g0){g0.view='hs';agResDraw(g0,res);return;}if(a==='back'&&g0){g0.view='';agResDraw(g0,res);return;}
      if(a==='end'){closeViz();return;}
      if(a==='rep')agReplayStart(v);else{const g=v.agg,b=g&&g.best,bl=g&&g.blap;res.hidden=true;v.agg=agNew();v.agg.best=b;v.agg.blap=bl;h.classList.remove('fin');}});
@@ -218,7 +229,7 @@ function vizAgHud(v){let h=v.dlg.querySelector('.vz-game');if(!h){h=document.cre
 // Rangliste nach dem Ziel: Platz, Name, Gesamtzeit (oder laufende Runde), Rundenzeiten; schnellste Runde markiert
 const AG_NM=['You','Vega','Kato','Mira'];
 // Bestenliste (Top Ten): beste Gesamtzeit und schnellste Runde, mit Namen
-const agHS=()=>{try{const o=JSON.parse(localStorage.getItem('vz_ag_hs')||'{}');return {race:o.race||[],lap:o.lap||[]};}catch{return {race:[],lap:[]};}};
+const agHS=()=>{try{const o=JSON.parse(localStorage.getItem(agK('vz_ag_hs'))||'{}');return {race:o.race||[],lap:o.lap||[]};}catch{return {race:[],lap:[]};}};
 const agHSq=(L,t)=>t&&(L.length<10||t<L[L.length-1].t);
 const agEsc=x=>String(x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function agResDraw(g,el){
@@ -285,12 +296,12 @@ const agShip=(z,lat,x)=>Object.assign({z,lat,psi:0,vpsi:0,om:0,roll:0,spd:0,boos
 function agOppShips(me){const o=AG_SHIPS.map((_,i)=>i).filter(i=>i!==me);for(let i=o.length-1;i>0;i--){const k=Math.floor(Math.random()*(i+1));[o[i],o[k]]=[o[k],o[i]];}return o;}
 // Geist: Bestzeit-Fahrt (Zeit, z, seitlich, Höhe, Nase, Rollen; 15 Bilder/s) im Gerät speichern
 function agGhostSave(v,g){try{const f=[];g.rec.forEach((r,i)=>{if(i%2&&i!==g.rec.length-1)return;const a=r.s[0];f.push(Math.round(r.t),a[0],a[1],a[2],a[3],a[4]);});
-  const G={t:g.fin,sm:g.sm,f};v.ghost=G;localStorage.setItem('ag_ghost',JSON.stringify(G));}catch(e){dl('Geist: '+e.message);}}
-function agGhostLoad(v){if(v.ghost!==undefined)return;try{v.ghost=JSON.parse(localStorage.getItem('ag_ghost')||'null');}catch{v.ghost=null;}}
+  const G={t:g.fin,sm:g.sm,f};v.ghost=G;v.ghK=agK('ag_ghost');localStorage.setItem(agK('ag_ghost'),JSON.stringify(G));}catch(e){dl('Geist: '+e.message);}}
+function agGhostLoad(v){if(v.ghK===agK('ag_ghost'))return;v.ghK=agK('ag_ghost');try{v.ghost=JSON.parse(localStorage.getItem(agK('ag_ghost'))||'null');}catch{v.ghost=null;}}
 function agNew(){const z0=AG_ZST-2.6,me=agShipIx(AG_SET.ship),os=agOppShips(me);return Object.assign(agShip(z0,0),{sm:me,st:'intro',t0:performance.now(),lt:performance.now(),race:0,wpn:null,wpK:-1,shield:0,flash:0,cdl:-1,
   solo:!!v.solo,opp:(v.solo?[]:[agShip(z0+3.2,-.5,{tint:[1,.25,.2]}),agShip(z0+6.4,.5,{tint:[.25,1,.45]}),agShip(z0+9.6,0,{tint:[.85,.35,1]})]).map((o,i)=>Object.assign(o,{sk:.95+i*.03,ai:Math.random()*100,sm:os[i%os.length]})),
   shots:[],mines:[],fx:[],burn:[],walls:[],zaps:[],lap:0,laps:[],rec:[]});}
-function vizAgGame(v,ts,val){if(!v.agg)v.agg=agNew();const g=v.agg;g.best=g.best??+(localStorage.getItem('vz_ag_best3')||0);g.blap=g.blap??+(localStorage.getItem('vz_ag_blap')||0);
+function vizAgGame(v,ts,val){if(!v.agg)v.agg=agNew();const g=v.agg;g.best=g.best??+(localStorage.getItem(agK('vz_ag_best3'))||0);g.blap=g.blap??+(localStorage.getItem(agK('vz_ag_blap'))||0);
   AGT_.pc=val.curvy??1;AGT_.tw=2.4*(val.width??1);AGT_.bkf=val.bank??1;const TW=AGT_.tw,ML=TW-.3;
   const dt=Math.min(.05,Math.max(0,(ts-g.lt)/1000));g.lt=ts;const I=vizAgInput(v),hud=vizAgHud(v);hud.hidden=false;hud.classList.toggle('nobtn',Math.round(val.ctrl??0)!==0);const a=v.an,A=agAudio(v);
   if(g.rep)return agReplayStep(v,ts,g,hud,A,val);
@@ -402,9 +413,9 @@ function vizAgGame(v,ts,val){if(!v.agg)v.agg=agNew();const g=v.agg;g.best=g.best
   const tE=hud.querySelector('.vzg-t'),mid=hud.querySelector('.vzg-mid');
   if(racing){tE.textContent=agFmt(ts-g.race);
     {const ln=Math.max(0,Math.min(AG_NL,Math.floor((g.z+2.6-AG_ZST)/AG_LAP)));if(!g.lapT)g.lapT=g.race;
-     if(ln>g.lap){const lt=ts-g.lapT;g.lapT=ts;g.lap=ln;g.laps.push(lt);const nb=!g.blap||lt<g.blap;if(nb){g.blap=lt;try{localStorage.setItem('vz_ag_blap',String(lt));}catch{}}
+     if(ln>g.lap){const lt=ts-g.lapT;g.lapT=ts;g.lap=ln;g.laps.push(lt);const nb=!g.blap||lt<g.blap;if(nb){g.blap=lt;try{localStorage.setItem(agK('vz_ag_blap'),String(lt));}catch{}}
       if(ln<AG_NL){mid.style.opacity=1;mid.innerHTML=(ln===AG_NL-1?'FINAL LAP':'LAP '+(ln+1))+'<small>'+agFmt(lt)+(nb?' · fastest lap':'')+'</small>';sf('pick');agBuzz([20,30,20]);const myL=ln;setTimeout(()=>{if(v.agg===g&&g.lap===myL&&g.st==='race')mid.style.opacity=0;},1800);}}}
-    if(g.z+2.6>=AG_ZFI){g.st='done';g.fin=ts-g.race;g.t0=ts;g.place=place;const nb=!g.best||g.fin<g.best;if(nb){g.best=g.fin;try{localStorage.setItem('vz_ag_best3',String(g.fin));}catch{}agGhostSave(v,g);}
+    if(g.z+2.6>=AG_ZFI){g.st='done';g.fin=ts-g.race;g.t0=ts;g.place=place;const nb=!g.best||g.fin<g.best;if(nb){g.best=g.fin;try{localStorage.setItem(agK('vz_ag_best3'),String(g.fin));}catch{}agGhostSave(v,g);}
       mid.style.opacity=1;mid.innerHTML=(place===1?'VICTORY':['1ST','2ND','3RD','4TH'][place-1]+' PLACE')+'<small>'+agFmt(g.fin)+(nb?' · new record':'')+'</small>';g.nb=nb;g.auto=0;hud.classList.add('fin');{const H=agHS(),bl=g.laps.length?Math.min(...g.laps):0,q={race:agHSq(H.race,g.fin)?g.fin:0,lap:agHSq(H.lap,bl)?bl:0};if(q.race||q.lap)g.hsAsk=q;}sf('win');try{agVib([30,60,30]);}catch{}}}
   if(g.race&&g.st!=='count')for(const o of g.opp){const ln=Math.max(0,Math.min(AG_NL,Math.floor((o.z+2.6-AG_ZST)/AG_LAP)));if(ln>(o.lap||0)){o.laps=o.laps||[];o.laps.push(ts-(o.lapT||g.race));o.lapT=ts;o.lap=ln;if(ln>=AG_NL&&!o.fin)o.fin=ts-g.race;}}
   if(g.st==='done'){const res=hud.querySelector('.vzg-res');if(ts-g.t0>2200){if(res.hidden){res.hidden=false;mid.style.opacity=0;}if(ts-(g.resT||0)>300){g.resT=ts;agResDraw(g,res);}}}
@@ -451,14 +462,14 @@ void main(){vec3 w=p+vec3(0.,0.,LZ);if(tt.z<2.5||(tt.z>10.5&&tt.z<11.5))w.y+=qua
  vec3 v=w-RO;float z=dot(v,CF);const float n=.1,f=220.;gl_Position=vec4(dot(v,CR)*FOV*2./A,dot(v,CU)*FOV*2.,(f+n)/(f-n)*z-2.*f*n/(f-n),z);}`;
 const AG_TFS=`#extension GL_OES_standard_derivatives : enable
 precision highp float;varying vec3 vw,vn,vt;varying vec2 vu;
-uniform vec3 RO,SUN,S0,SF,SR;uniform float T,NT,TW,PC,LG,BO,QZ,QS,RZ;uniform vec4 LP[8],LC[8],AGD[6];
+uniform vec3 RO,SUN,S0,SF,SR,FOGC;uniform float T,NT,TW,PC,LG,BO,QZ,QS,RZ,TH;uniform vec4 LP[8],LC[8],AGD[6];uniform vec3 SG[5];
 float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
 float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x),f.y);}
-vec3 neo(float k){k=fract(k);return k<.5?vec3(.0,.78,1.):k<.88?vec3(1.,.06,.42):vec3(1.,.62,.08);}
-vec3 CY=vec3(0.,.78,1.),MG=vec3(1.,.06,.42),AM=vec3(1.,.62,.08);
+vec3 neo(float k){k=fract(k);if(TH>.5)return k<.33?vec3(1.,.55,.72):k<.66?vec3(.45,.92,.78):vec3(.7,.6,1.);return k<.5?vec3(.0,.78,1.):k<.88?vec3(1.,.06,.42):vec3(1.,.62,.08);}
+vec3 CY,MG,AM;
 float lz(float z){return mod(z-20.,700.)+20.;}
 float sS2(float u){return (u<0.||u>1.)?0.:60.*u*(u-1.)*(2.*u-1.);}
-float d2px(float z){float l=lz(z);return PC*(18./14400.*sS2((l-80.)/120.)-26./19600.*sS2((l-240.)/140.)+14./12100.*sS2((l-420.)/110.)-6./12100.*sS2((l-560.)/110.));}
+float d2px(float z){float l=lz(z),r=0.;for(int i=0;i<5;i++){vec3 g=SG[i];if(g.y>0.)r+=g.z/(g.y*g.y)*sS2((l-g.x)/g.y);}return PC*r;}
 float bpx(float k){return -sign(d2px(k*35.+6.))*.5*TW/1.6;}
 float wpx(float k){return .55*sin(mod(k,20.)*1.3+.4)*TW/1.6;}
 // kantenglatte Linie: Abstand d, halbe Breite w
@@ -488,8 +499,9 @@ vec3 graffiti(float ang,float zz){float ax=ang*(TW+.17);vec2 c=vec2(floor(zz/3.4
  float rt=(hash(c+17.)-.5)*.6;q=mat2(cos(rt),-sin(rt),sin(rt),cos(rt))*q;
  float d=grSym(floor(hash(c+5.)*8.),q)*sc;float hc=hash(c+23.);vec3 col=hc<.45?vec3(1.,.95,.08):hc<.8?vec3(1.,.12,.62):vec3(.35,1.,.15);
  return col*(aal(d,.045)*2.4+exp(-d*7.)*.35);}
-void main(){vec3 p=vw;vec3 n=normalize(vn);if(!gl_FrontFacing)n=-n;float qx=vt.x,qy=vt.y,mat=vt.z,zz=p.z;
- float zl=lz(zz),dk=smoothstep(509.,514.,zl)*smoothstep(596.,591.,zl);   // dunkler Graffiti-Tunnel
+void main(){bool TY=TH>.5;CY=TY?vec3(.5,.85,1.):vec3(0.,.78,1.);MG=TY?vec3(1.,.5,.7):vec3(1.,.06,.42);AM=TY?vec3(1.,.82,.45):vec3(1.,.62,.08);
+ vec3 p=vw;vec3 n=normalize(vn);if(!gl_FrontFacing)n=-n;float qx=vt.x,qy=vt.y,mat=vt.z,zz=p.z;
+ float zl=lz(zz),dk=TY?0.:smoothstep(509.,514.,zl)*smoothstep(596.,591.,zl);   // dunkler Graffiti-Tunnel
  vec3 vd=p-RO;float t=length(vd);vec3 rd=vd/t;if(dot(n,rd)>0.)n=-n;vec3 rf=reflect(rd,n);
  vec3 alb=vec3(.2),em=vec3(0.);float spec=.2,refl=.04,gl=8.,ao=1.;float wet=0.;
  float edge=smoothstep(.72,.98,max(abs(vu.x),abs(vu.y)));
@@ -519,28 +531,37 @@ void main(){vec3 p=vw;vec3 n=normalize(vn);if(!gl_FrontFacing)n=-n;float qx=vt.x
   {vec3 dv=p-S0;float sx=dot(dv,SR),sz=dot(dv,SF);ao=1.-.6*exp(-sx*sx/.03-(sz-.1)*(sz-.1)/.5);}
   for(int i=0;i<8;i++){vec4 lp=LP[i];if(lp.w>0.){vec3 dv=lp.xyz-p;float al=dot(dv,rf);if(al>0.){vec3 cp=p+rf*al-lp.xyz;float r=.05+al*.16;float hz=dot(cp,n);vec3 cq=cp-n*hz;
      float k=exp(-dot(cq,cq)/(r*r*.35)-hz*hz/(r*r*2.5));em+=LC[i].rgb*lp.w*k*wet*1.6/(1.+al*al*LC[i].w*.15);}}}
-  alb*=1.-.3*wet;spec=.75;refl=.12+.15*wet;gl=50.;}
+  alb*=1.-.3*wet;spec=.75;refl=.12+.15*wet;gl=50.;
+  if(TY){ // Spielzeugbahn: helles Flieder mit Tupfen, rosa-weiße Randsteine, butterfarbene Mittellinie (Felder und Pfeile bleiben)
+   float pd=smoothstep(.2,.16,length(fract(vec2(qx*1.4,zz*1.4))-.5));vec3 ta=vec3(.6,.55,.82)*(.94+.06*nz);ta=mix(ta,vec3(.82,.76,.95),pd*.7);
+   float cb=step(TW-.3,abs(qx));ta=mix(ta,mix(vec3(1.,.45,.65),vec3(1.),step(.5,fract(zz*.8))),cb);ta=mix(ta,vec3(1.,.88,.5),midL);
+   float pads=max(step(.8,max(em.r,max(em.g,em.b))),step(abs(lz(zz+350.)-370.),.5));alb=mix(ta,alb,pads);em*=.6;spec=.3;refl=.04;gl=24.;}}
  else if(mat<2.5){ // Leitplanke: Neonbänder mit Lauflichtern
   alb=vec3(.09,.095,.11);float sd=qx>0.?.5:0.;vec3 nc=qx>0.?MG:CY,nc2=vec3(.9,.95,1.)*.35;float run=exp(-pow(fract(zz*.04-T*.9+sd)-.5,2.)*90.);
   em+=(nc*aal(abs(qy-.175),.018)*(1.8+2.2*run+1.2*BO)*LG+nc2*aal(abs(qy-.02),.008)*(.6+1.5*run)*LG)*(1.-.92*dk);
-  float lamp=aal(length(vec2((fract(zz*.9)-.5)/.9,(qy-.1)*1.)),.035);em+=vec3(1.,.85,.7)*lamp*.5*LG*(1.-dk);spec=.8;gl=40.;}
+  float lamp=aal(length(vec2((fract(zz*.9)-.5)/.9,(qy-.1)*1.)),.035);em+=vec3(1.,.85,.7)*lamp*.5*LG*(1.-dk);spec=.8;gl=40.;
+  if(TY){float st=step(.5,fract(zz*1.2+qy*2.5));alb=mix(qx>0.?vec3(.35,.85,.68):vec3(1.,.5,.68),vec3(1.),st);em*=.35;spec=.4;gl=20.;}}
  else if(mat<3.5){ // Werbetafel: klare Grafik, leuchtet, Neonrahmen
   float k=mod(floor(zz/20.),35.);float h=fract(sin(k*41.3)*437.1);vec2 u=vu;
   vec3 c1=h<.33?vec3(.05,.22,.62):h<.66?vec3(.9,.12,.1):vec3(.08,.08,.09),c2=h<.5?vec3(1.,.8,.05):vec3(.95);
   alb=c1;float ar=step(abs(fract(u.x*2.-abs(u.y)*.8)-.5),.18)*step(abs(u.y),.6);alb=mix(alb,c2,ar*step(.4,fract(h*7.)));
   float dg=seg7(vec2((u.x-.55)*1.1,u.y*.95),h<.5?127.:111.);alb=mix(alb,vec3(.95),smoothstep(.09,.06,dg)*step(.4,u.x)*step(fract(h*7.),.4));
-  vec3 nb=neo(h*3.);alb=mix(alb*.6,nb*.5,.35);em+=alb*.7*LG+nb*edge*2.2*LG*(.8+.2*sin(T*3.+h*20.));refl=.1;}
- else if(mat<4.5){alb=vec3(.1,.105,.12);spec=.7;gl=30.;float pk=floor((zz+7.)/28.);em+=neo(pk*.29)*edge*2.2*LG;}
- else if(mat<5.5){alb=vec3(.14,.13,.15);em+=neo(floor(zz/14.)*.31)*aal(abs(fract(qy*.7+T*.3)-.5),.04)*1.2*LG+neo(floor(zz/14.)*.31)*edge*.5*LG;}
+  vec3 nb=neo(h*3.);alb=mix(alb*.6,nb*.5,.35);em+=alb*.7*LG+nb*edge*2.2*LG*(.8+.2*sin(T*3.+h*20.));refl=.1;
+  if(TY){vec2 b=vec2(vu.x*1.6,vu.y*.3);vec2 c=vec2(mod(b.x,.6)-.3,b.y);float fc=step(length(c),.2);alb=mix(neo(h*3.+.2)*.95,vec3(1.,.96,.9),fc);
+   alb=mix(alb,vec3(.25,.18,.22),fc*(step(length(c-vec2(-.07,.04)),.025)+step(length(c-vec2(.07,.04)),.025)+aal(abs(length(c-vec2(0.,.0))-.07),.012)*step(c.y,-.02)));alb=mix(alb,vec3(1.,.6,.7),fc*step(length((c-vec2(.12,-.04))*vec2(1.,1.6)),.035));alb=mix(alb,vec3(1.,.6,.7),fc*step(length((c+vec2(.12,.04))*vec2(1.,1.6)),.035));
+   alb=mix(alb,vec3(1.),edge);em=vec3(0.);}}
+ else if(mat<4.5){alb=vec3(.1,.105,.12);spec=.7;gl=30.;float pk=floor((zz+7.)/28.);em+=neo(pk*.29)*edge*2.2*LG;if(TY){alb=qy>1.25?vec3(.32,.22,.3):vec3(1.,.42,.36);em=alb*.25*step(qy,1.25);spec=.3;}}
+ else if(mat<5.5){alb=vec3(.14,.13,.15);em+=neo(floor(zz/14.)*.31)*aal(abs(fract(qy*.7+T*.3)-.5),.04)*1.2*LG+neo(floor(zz/14.)*.31)*edge*.5*LG;if(TY){alb=vec3(.85,.8,.95);em*=.3;}}
  else if(mat<6.5){ // Röhre: dunkel, bunte Ringe, Deckenband, Seitenbänder mit Lauflicht
   alb=vec3(.06,.055,.08);float ang=vu.x;float f=fwidth(zz*.7);float ring=aal(abs(fract(zz*.7+.5)-.5),.03);ring=mix(ring,.06,clamp(f*1.5,0.,1.));
   em+=mix(CY,MG,step(.8,fract(floor(zz*.7+.5)*.37)))*ring*1.4*LG+vec3(.85,.9,1.)*aal(abs(ang),.025)*.5*LG;
   em+=(ang>0.?MG:CY)*aal(abs(abs(ang)-1.25),.016)*(.3+.9*exp(-pow(fract(zz*.05-T*1.2)-.5,2.)*60.))*LG;spec=.5;gl=25.;
+  if(TY){alb=mix(vec3(1.,.68,.82),vec3(1.),aal(abs(fract(zz*.35)-.5),.08));em=em*.35+alb*.4;}
   if(dk>.001){float inner=step(length(vec2(qx,qy-.4)),TW+.2);alb=mix(alb,vec3(.004),dk);spec*=1.-dk;em=mix(em,graffiti(ang,zz)*inner*LG,dk);}}
  else if(mat<7.5){vec2 cq=floor(vec2(qx*5.,qy*6.));float ck=mod(cq.x+cq.y,2.);alb=vec3(ck*.9+.05);em+=vec3(ck)*.55*LG+vec3(1.)*edge*.8*LG;}
  else if(mat<8.5){ // Sperre: rot-weiß, Warnlicht oben – unverwechselbar
   float st=step(.5,fract((vu.x+vu.y)*2.5));alb=mix(vec3(.85,.04,.03),vec3(.9),st);float bl=.55+.45*sin(T*9.);
-  em+=vec3(1.,.05,.03)*(edge*2.5+smoothstep(.75,.95,vu.y)*2.)*bl*LG+vec3(.6,.02,.01)*(1.-st)*.5*LG;spec=.6;gl=30.;}
+  em+=vec3(1.,.05,.03)*(edge*2.5+smoothstep(.75,.95,vu.y)*2.)*bl*LG+vec3(.6,.02,.01)*(1.-st)*.5*LG;spec=.6;gl=30.;if(TY){alb=mix(vec3(1.,.42,.58),vec3(1.),st);em*=.4;}}
  else if(mat<9.5){float ai=floor(zz/14.);float ch=exp(-fract(ai*.25-T*.9)*5.);alb=vec3(0.);em=(mod(ai,3.)<.5?MG:CY)*(.8+ch*2.)*LG;}
  else if(mat>11.5){float ps=RZ-zz;float fl=ps>0.?exp(-ps*.35):exp(ps*.6)*.25;float gi=floor(zz/150.);vec3 rc=mod(gi,2.)<.5?CY:MG;float wv=exp(-pow(fract(vu.x/6.2832-max(ps,0.)*.18)-.5,2.)*40.)*step(0.,ps)*exp(-ps*.15);
   alb=vec3(0.);em=rc*(1.1+3.5*fl)*LG+vec3(1.)*(fl*1.5+wv*3.)*LG;}
@@ -552,7 +573,9 @@ void main(){vec3 p=vw;vec3 n=normalize(vn);if(!gl_FrontFacing)n=-n;float qx=vt.x
  vec3 dL=vec3(0.),sL=vec3(0.);
  for(int i=0;i<8;i++){vec4 lp=LP[i];if(lp.w>0.){vec3 L=lp.xyz-p;float d2=dot(L,L);L*=inversesqrt(d2);float at=lp.w/(1.+d2*LC[i].w);dL+=LC[i].rgb*at*max(0.,dot(n,L));sL+=LC[i].rgb*at*pow(max(0.,dot(rf,L)),gl*.6)*spec*(1.+wet*2.);}}
  float fr=pow(1.-max(0.,dot(n,-rd)),5.);vec3 env=mix(vec3(.02,.022,.04),vec3(.004,.005,.01),smoothstep(0.,.4,rf.y))*(1.+NT*0.);
+ if(TY){sunC=vec3(1.15,1.06,1.);ambC=vec3(.66,.62,.74);c2=vec3(.5,.55,.7);env=vec3(.95,.88,.96)*.35;}
  vec3 col=alb*(sunC*dif*.9*ao+c2*dif2*.75*ao+ambC*(.5+.5*n.y)*ao+dL*ao)+(sunC*sp+c2*sp2*.8)*ao+sL+env*(refl+fr*.5*spec)+em;
+ if(TY){col=(col*(2.51*col+.03))/(col*(2.43*col+.59)+.14);col=mix(FOGC,clamp(col*1.08,0.,1.),exp(-t*.0055));gl_FragColor=vec4(col,1.);return;}
  vec3 fc=mix(vec3(.012,.013,.024),vec3(.003,.0035,.007),smoothstep(-.05,.3,rd.y))*(1.-dk);float fog=exp(-t*.011);col=mix(fc,col,fog);
  col=(col*(2.51*col+.03))/(col*(2.43*col+.59)+.14);gl_FragColor=vec4(pow(clamp(col,0.,1.),vec3(.95)),1.);}`;
 // Leuchteffekte als Lichtpunkte und Lichtbänder (immer zur Kamera gedreht), addiert, vom Tiefenpuffer verdeckt
@@ -628,7 +651,7 @@ function agTrackBuild(gl){const TW=AGT_.tw,{ad,mu}=agV,chunks=[];
     if(nv>65535)console.warn('[VIZ] Strecke: zu viele Punkte',nv);chunks.push({z0:Z0,z1:Z1,vb,ib,ni:I.length});}
   return chunks;}
 function agTrack(v){const gl=v.gl;if(v.agT&&v.agT.bad)return null;
-  const key=[AGT_.tw,AGT_.pc,AGT_.bkf].join('|');if(v.agT&&v.agT.key===key)return v.agT;
+  const key=[AGT_.tw,AGT_.pc,AGT_.bkf,AG_TRK].join('|');if(v.agT&&v.agT.key===key)return v.agT;
   try{if(v.agT)for(const c of v.agT.chunks){gl.deleteBuffer(c.vb);gl.deleteBuffer(c.ib);}
     gl.getExtension('OES_standard_derivatives');const tp=v.agT?v.agT.tp:agMkProg(gl,AG_TVS,AG_TFS,['p','nn','tt','uv2']),fp=v.agT?v.agT.fp:agMkProg(gl,AG_FVS,AG_FFS,['a0','a1','a2','a3']);
     const fb=v.agT?v.agT.fb:gl.createBuffer(),fi=v.agT?v.agT.fi:(()=>{const b=gl.createBuffer(),ix=new Uint16Array(AG_FXN*6);for(let q=0;q<AG_FXN;q++)ix.set([q*4,q*4+1,q*4+2,q*4,q*4+2,q*4+3],q*6);gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,b);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,ix,gl.STATIC_DRAW);return b;})();
@@ -692,7 +715,7 @@ function vizAgScene(v,tgt,val,P){const gl=v.gl,T=agTrack(v);if(!T)return;const g
   gl.useProgram(T.tp.pg);set3(u,'RO',P.ro);set3(u,'CF',P.cf);set3(u,'CR',P.cr);set3(u,'CU',P.cu);gl.uniform1f(u.FOV,P.fov);gl.uniform1f(u.A,A);
   const sn=[-.4,.07,1],sl=Math.hypot(...sn);gl.uniform3f(u.SUN,sn[0]/sl,sn[1]/sl,sn[2]/sl);set3(u,'S0',P.S0);set3(u,'SF',P.SF);set3(u,'SR',P.SR);
   gl.uniform1f(u.T,(performance.now()/1000)%3600);gl.uniform1f(u.NT,val.sky??1);gl.uniform1f(u.TW,AGT_.tw);gl.uniform1f(u.PC,AGT_.pc);gl.uniform1f(u.LG,val.glow??1);gl.uniform1f(u.BO,g.boost||0);
-  gl.uniform1f(u.RZ,g.z+2.6);gl.uniform1f(u.QZ,g.quake?g.quake.z:-1e3);gl.uniform1f(u.QS,g.quake?Math.max(0,1-(g.quake.age||0)/6):0);
+  gl.uniform1f(u.RZ,g.z+2.6);gl.uniform1f(u.TH,AG_TRK);gl.uniform3f(u.FOGC,...AG_FOGC);{const sg=new Float32Array(15);AG_SEG.forEach((q,i)=>sg.set(q,i*3));gl.uniform3fv(u['SG[0]'],sg);}gl.uniform1f(u.QZ,g.quake?g.quake.z:-1e3);gl.uniform1f(u.QS,g.quake?Math.max(0,1-(g.quake.age||0)/6):0);
   gl.uniform4fv(u['LP[0]'],FX.LP);gl.uniform4fv(u['LC[0]'],FX.LC);gl.uniform4fv(u['AGD[0]'],vizAgD(g));
   gl.disable(gl.CULL_FACE);gl.enable(gl.DEPTH_TEST);gl.depthMask(true);gl.disable(gl.BLEND);
   for(let i=0;i<4;i++)gl.enableVertexAttribArray(i);
@@ -711,11 +734,55 @@ function vizAgFx(v,P){const gl=v.gl,T=v.agT,FX=v.agFX;if(!T||T.bad||!FX||!FX.n)r
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,T.fi);gl.drawElements(gl.TRIANGLES,FX.n*6,gl.UNSIGNED_SHORT,0);
   for(let i=1;i<4;i++)gl.disableVertexAttribArray(i);gl.depthMask(true);gl.disable(gl.BLEND);}
 
+
+// ---------- Sakura Toys: Boden, riesige Spielzeugfiguren neben der Strecke, schwebende Kirschblüten (Kugeln, weich schattiert)
+const AG_FOGC=[.98,.88,.9];
+const AG_PC={pk:[1,.62,.76],mt:[.55,.9,.76],lv:[.72,.64,.98],bt:[1,.88,.55],sk:[.58,.78,1],cr:[1,.96,.9],pe:[1,.8,.68],dk:[.22,.16,.2],bl:[1,.55,.66],wd:[.72,.55,.5],sa:[1,.78,.86],sw:[1,.88,.93]};
+const AG_TVS2=`precision highp float;attribute vec3 p,nn;uniform mat4 M;uniform vec3 SCL;uniform vec3 RO,CF,CR,CU;uniform float FOV,A;varying vec3 vw,vn;
+void main(){vec4 w=M*vec4(p,1.);vw=w.xyz;vn=mat3(M)*(nn/(SCL*SCL));vec3 v=w.xyz-RO;float z=dot(v,CF);const float n=.1,f=220.;gl_Position=vec4(dot(v,CR)*FOV*2./A,dot(v,CU)*FOV*2.,(f+n)/(f-n)*z-2.*f*n/(f-n),z);}`;
+const AG_TFS2=`precision highp float;varying vec3 vw,vn;uniform vec3 RO,COL,FOGC;uniform float GRD;
+void main(){vec3 n=normalize(vn);vec3 rd=normalize(vw-RO);if(dot(n,rd)>0.)n=-n;vec3 L=normalize(vec3(.35,.7,.6));
+ float d=dot(n,L)*.5+.5;float toon=.68+.32*smoothstep(.38,.5,d);float rim=pow(1.-max(0.,dot(n,-rd)),3.);vec3 c=COL;
+ if(GRD>.5){vec2 q=vw.xz*.09;c=mix(c,vec3(1.,.8,.88),smoothstep(.16,.12,length(fract(q+vec2(.5*floor(q.y),0.))-.5))*.7);toon=1.;rim=0.;}
+ vec3 col=c*toon+vec3(1.,.97,1.)*rim*.22+vec3(1.)*pow(max(0.,dot(reflect(rd,n),L)),20.)*.25*(1.-GRD);
+ col=mix(FOGC,col,exp(-length(vw-RO)*(GRD>.5?.009:.0042)));gl_FragColor=vec4(clamp(col,0.,1.),1.);}`;
+// Figuren aus Kugeln: [x,y,z, Radius x,y,z, Farbe]; y = Höhe über dem Boden, +z schaut zur Strecke
+function agToyParts(type,c){const P=AG_PC,C=c;switch(type){
+  case 0:return [[0,1.5,0,1.5,1.5,1.3,C],[0,3.6,0,1.25,1.1,1.1,C],[.85,4.5,0,.42,.42,.3,C],[-.85,4.5,0,.42,.42,.3,C],[0,3.35,1,.5,.36,.3,P.cr],[0,3.52,1.28,.13,.1,.08,P.dk],
+    [.42,3.85,.98,.11,.14,.06,P.dk],[-.42,3.85,.98,.11,.14,.06,P.dk],[.75,3.4,.86,.24,.13,.06,P.bl],[-.75,3.4,.86,.24,.13,.06,P.bl],[1.35,1.9,.3,.45,.7,.45,C],[-1.35,1.9,.3,.45,.7,.45,C],[.7,.25,.6,.5,.3,.6,C],[-.7,.25,.6,.5,.3,.6,C]];   // Mochi-Bär
+  case 1:return [[0,3.3,0,.09,3.3,.09,P.wd],[0,1.5,0,1,.95,1,P.sa],[0,3.3,0,1,.95,1,P.sw],[0,5.1,0,1,.95,1,P.mt]];   // Hanami-Dango
+  case 2:return [[0,2.6,0,.42,2.6,.42,P.wd],[0,5.6,0,2.3,1.7,2.3,P.pk],[1.7,5,.3,1.5,1.2,1.5,P.sa],[-1.6,5.1,-.2,1.5,1.2,1.5,P.sw],[.2,6.7,-.5,1.6,1.2,1.6,P.sa],[-.6,6.3,1.1,1.2,1,1.2,P.pk]];   // Kirschbaum
+  case 3:return [[0,1.6,0,1,1.6,1,C],[0,3.7,0,.95,.95,.95,P.cr],[0,4.05,-.25,1.02,.85,1,P.dk],[.32,3.72,.88,.1,.04,.04,P.dk],[-.32,3.72,.88,.1,.04,.04,P.dk],[.55,3.5,.75,.2,.11,.06,P.bl],[-.55,3.5,.75,.2,.11,.06,P.bl],[0,1.9,.97,.36,.36,.08,P.sw],[0,1.9,1.02,.13,.13,.05,P.bt]];   // Kokeshi
+  default:return [[0,1.25,0,1.25,1.25,1.25,C],[1.9,.85,.7,.85,.85,.85,P.bt],[-1.5,1,-.6,1,1,1,P.sk],[.4,2.9,0,.7,.7,.7,P.mt]];}}   // Spielbälle
+function agToyRes(v){const gl=v.gl;if(v.toy)return v.toy;
+  try{const pr=agMkProg(gl,AG_TVS2,AG_TFS2,['p','nn']),V=[],I=[],NA=12,NO=18;
+    for(let i=0;i<=NA;i++){const th=Math.PI*i/NA;for(let j=0;j<=NO;j++){const ph=2*Math.PI*j/NO,x=Math.sin(th)*Math.cos(ph),y=Math.cos(th),z=Math.sin(th)*Math.sin(ph);V.push(x,y,z,x,y,z);}}
+    for(let i=0;i<NA;i++)for(let j=0;j<NO;j++){const a=i*(NO+1)+j,b=a+NO+1;I.push(a,b,a+1,a+1,b,b+1);}
+    const vb=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,vb);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(V),gl.STATIC_DRAW);
+    const ib=gl.createBuffer();gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,ib);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(I),gl.STATIC_DRAW);v.toy={pr,vb,ib,ni:I.length};}
+  catch(e){dl('Spielzeug: '+e.message);v.toy={bad:true};}return v.toy;}
+function agToyDraw(v,P){if(AG_TRK!==1)return;const K=agToyRes(v);if(K.bad)return;const gl=v.gl,u=K.pr.u,{nz,cr,mu,ad}=agV,T=performance.now()/1000;
+  gl.useProgram(K.pr.pg);const s3=(k,x)=>gl.uniform3f(u[k],x[0],x[1],x[2]);s3('RO',P.ro);s3('CF',P.cf);s3('CR',P.cr);s3('CU',P.cu);s3('FOGC',AG_FOGC);gl.uniform1f(u.FOV,P.fov);gl.uniform1f(u.A,innerWidth/innerHeight);
+  gl.bindBuffer(gl.ARRAY_BUFFER,K.vb);gl.enableVertexAttribArray(0);gl.enableVertexAttribArray(1);gl.vertexAttribPointer(0,3,gl.FLOAT,false,24,0);gl.vertexAttribPointer(1,3,gl.FLOAT,false,24,12);gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,K.ib);
+  gl.enable(gl.DEPTH_TEST);gl.depthMask(true);gl.disable(gl.BLEND);const M=new Float32Array(16);
+  const ell=(C,X,Y,Z,h,col)=>{M.set([X[0]*h[0],X[1]*h[0],X[2]*h[0],0,Y[0]*h[1],Y[1]*h[1],Y[2]*h[1],0,Z[0]*h[2],Z[1]*h[2],Z[2]*h[2],0,C[0],C[1],C[2],1]);gl.uniformMatrix4fv(u.M,false,M);s3('SCL',h);s3('COL',col);gl.drawElements(gl.TRIANGLES,K.ni,gl.UNSIGNED_SHORT,0);};
+  const GY=-6.2,X0=[1,0,0],Y0=[0,1,0],Z0=[0,0,1];
+  // Boden: weite Wiese in Mint mit rosa Blütentupfen
+  gl.uniform1f(u.GRD,1);ell([P.ro[0],GY,P.ro[2]+60],X0,Y0,Z0,[420,.02,420],[.8,.94,.86]);gl.uniform1f(u.GRD,0);
+  const hs=(a,b)=>{const x=Math.sin(a*127.1+b*311.7)*43758.5453;return x-Math.floor(x);},cz=P.ro[2],cols=[AG_PC.pk,AG_PC.mt,AG_PC.lv,AG_PC.bt,AG_PC.sk,AG_PC.pe];
+  for(let k=Math.floor((cz-30)/13);k*13<cz+190;k++){const zc=k*13+6;const sd=hs(k,1)<.5?-1:1,ty=Math.floor(hs(k,2)*5),sc=2+hs(k,3)*1.3,lat=sd*(AGT_.tw+2.6+hs(k,4)*4.5);
+    const F=agFrame(zc),R=nz([F.rr[0],0,F.rr[2]]),B=[F.c[0]+R[0]*lat,GY,F.c[2]+R[2]*lat];let Zf=mu(R,-sd);const tw=(hs(k,6)-.5)*.9;Zf=nz(ad(mu(Zf,Math.cos(tw)),mu(cr(Y0,Zf),Math.sin(tw))));const Xf=cr(Y0,Zf);
+    const bob=ty===4?0:Math.sin(T*1.6+k)*.06;   // leichtes Wippen
+    for(const q of agToyParts(ty,cols[Math.floor(hs(k,5)*cols.length)]))ell(ad(B,mu(Xf,q[0]*sc),mu(Y0,(q[1]+bob*q[1])*sc),mu(Zf,q[2]*sc)),Xf,Y0,Zf,[q[3]*sc,q[4]*sc,q[5]*sc],q[6]);}
+  // Kirschblüten: schweben um die Kamera, trudeln langsam herab
+  for(let j=0;j<46;j++){const ph=(T*(.08+.05*hs(j,7))+hs(j,8))%1,fw=agFrame(cz+20);const pos=ad(P.ro,mu(fw.fw,26-ph*34),[(hs(j,9)-.5)*14+Math.sin(T*.7+j)*.6,3.5-ph*6+(hs(j,10)-.5)*2,0]);
+    const a=T*(1.5+hs(j,11)*2)+j,X=[Math.cos(a),Math.sin(a)*.5,Math.sin(a)*.6],Yp=nz(cr(X,[0,0,1])),Zp=cr(X,Yp);ell(pos,X,Yp,Zp,[.09,.02,.065],hs(j,12)<.5?AG_PC.pk:AG_PC.sw);}
+  gl.disableVertexAttribArray(1);}
 function vizShipDraw(v,tgt,val){const gl=v.gl;let SP=null;try{SP=vizShipProg(v);}catch(e){if(!v.shipErr){v.shipErr=1;dl('Gleiter-Shader: '+e.message);}}AG_SHIPS.forEach((_,i)=>vizShipModel(v,i));const P=vizAgPose(v,val),u=SP&&SP.u;
   if(tgt.f&&(!tgt.db||tgt.dbw!==tgt.w||tgt.dbh!==tgt.h)){if(!tgt.db)tgt.db=gl.createRenderbuffer();gl.bindRenderbuffer(gl.RENDERBUFFER,tgt.db);gl.renderbufferStorage(gl.RENDERBUFFER,gl.DEPTH_STENCIL,tgt.w,tgt.h);tgt.dbw=tgt.w;tgt.dbh=tgt.h;
     gl.bindFramebuffer(gl.FRAMEBUFFER,tgt.f);gl.framebufferRenderbuffer(gl.FRAMEBUFFER,gl.DEPTH_STENCIL_ATTACHMENT,gl.RENDERBUFFER,tgt.db);}
   gl.bindFramebuffer(gl.FRAMEBUFFER,tgt.f);gl.viewport(0,0,tgt.w,tgt.h);gl.depthMask(true);gl.clear(gl.DEPTH_BUFFER_BIT);gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);
-  vizAgScene(v,tgt,val,P);gl.enable(gl.DEPTH_TEST);
+  agToyDraw(v,P);vizAgScene(v,tgt,val,P);gl.enable(gl.DEPTH_TEST);
   if(SP){gl.useProgram(SP.pg);const f3=(k,x)=>gl.uniform3f(u[k],x[0],x[1],x[2]);
   f3('S0',P.S0);f3('SR',P.SR);f3('SU',P.SUp);f3('SF',P.SF);f3('RO',P.ro);f3('CF',P.cf);f3('CR',P.cr);f3('CU',P.cu);
   const sn=[-.4,.07,1],sl=Math.hypot(...sn);gl.uniform3f(u.SUN,sn[0]/sl,sn[1]/sl,sn[2]/sl);
@@ -742,7 +809,7 @@ function vizShipDraw(v,tgt,val){const gl=v.gl;let SP=null;try{SP=vizShipProg(v);
 // =====================================================================================================
 // AntiGrav – eigene App. Ab hier: Grundgerüst (Bildschleife, Himmel, Nachbearbeitung, Menü, Einstellungen, Updates)
 // =====================================================================================================
-const AG_SET_DEF={ship:0,ghost:1,ctrl:0,speed:1,curvy:1,width:1,steer:1,bank:1,glow:1,sky:1};
+const AG_SET_DEF={trk:0,ship:0,ghost:1,ctrl:0,speed:1,curvy:1,width:1,steer:1,bank:1,glow:1,sky:1};
 // Spannweiten wie in VIZ (dort waren die Regler weiter als angegeben), Tempo bis zum Vierfachen
 const AG_SET_L=[['speed','Speed',.3,10,.05],['curvy','Curviness',.2,2.8,.01],['width','Track width',.6,2.1,.01],['bank','Banking',0,3.2,.01],['glow','Track lighting',0,3.2,.01],['sky','Dusk ↔ Night',0,1,.01],['steer','Opponents: steering accuracy',.3,3.2,.01]];
 let AG_SET=(()=>{try{return Object.assign({},AG_SET_DEF,JSON.parse(localStorage.getItem('ag_set')||'{}'));}catch{return Object.assign({},AG_SET_DEF);}})();
@@ -758,7 +825,7 @@ const v={gl,cv,dlg:$('app'),an:{},last:0,state:'menu'};
 if(!gl){document.body.innerHTML='<p style="color:#fff;padding:40px;font:16px system-ui">Your phone does not support WebGL here.</p>';}
 v.qbuf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,v.qbuf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
 const AG_QVS='attribute vec2 p;varying vec2 uv;void main(){uv=p*.5+.5;gl_Position=vec4(p,0.,1.);}';
-const AG_SKY_FS='precision highp float;varying vec2 uv;uniform float A,p_sky;\n'+
+const AG_SKY_FS='precision highp float;varying vec2 uv;uniform float A,p_sky,TH;\n'+
  'float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}\n'+
  'float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x),f.y);}\n'+
  'float fbm(vec2 p){float s=0.,a=.5;for(int i=0;i<5;i++){s+=a*noise(p);p=p*2.03+vec2(1.7,9.2);a*=.5;}return s;}\n'+
@@ -780,7 +847,7 @@ function agFbo(w,h){const t=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,t);g
 function agSize(res){const dpr=Math.min(devicePixelRatio||1,2);const cw=Math.round(innerWidth*dpr*.9),ch=Math.round(innerHeight*dpr*.9);if(cv.width!==cw||cv.height!==ch){cv.width=cw;cv.height=ch;}
   const sw=Math.round(innerWidth*dpr*res),sh=Math.round(innerHeight*dpr*res);
   if(!v.scene||v.scene.w!==sw||v.scene.h!==sh){if(v.scene){gl.deleteTexture(v.scene.t);gl.deleteFramebuffer(v.scene.f);if(v.scene.db)gl.deleteRenderbuffer(v.scene.db);}v.scene=agFbo(sw,sh);}}
-const agVal=()=>AG_SET;
+const agVal=()=>AG_TRK?Object.assign({},AG_SET,{sky:0,glow:(AG_SET.glow??1)*.6}):AG_SET;
 function agQuadDraw(){gl.bindBuffer(gl.ARRAY_BUFFER,v.qbuf);gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,2,gl.FLOAT,false,0,0);gl.drawArrays(gl.TRIANGLE_STRIP,0,4);}
 
 // ---- Menü-Hintergrund: Kamera kreist langsam um den Gleiter am Start
@@ -802,13 +869,13 @@ function agFrame60(ts){requestAnimationFrame(agFrame60);if(!AG_SKYP)return;
   // Himmel
   const tgt=v.scene;gl.bindFramebuffer(gl.FRAMEBUFFER,tgt.f);gl.viewport(0,0,tgt.w,tgt.h);gl.disable(gl.DEPTH_TEST);gl.disable(gl.BLEND);
   const P=vizAgPose(v,val),U=AG_SKYP.u;gl.useProgram(AG_SKYP.pg);
-  gl.uniform3f(U.AGRO,...P.ro);gl.uniform3f(U.AGTA,...agV.ad(P.ro,P.cf));gl.uniform3f(U.AGUP,...P.cu);gl.uniform1f(U.AGFV,P.fov);gl.uniform1f(U.AGT,(ts/1000)%3600);gl.uniform1f(U.A,innerWidth/innerHeight);gl.uniform1f(U.p_sky,val.sky??1);gl.uniform1f(U.AGZ,0);
+  gl.uniform3f(U.AGRO,...P.ro);gl.uniform3f(U.AGTA,...agV.ad(P.ro,P.cf));gl.uniform3f(U.AGUP,...P.cu);gl.uniform1f(U.AGFV,P.fov);gl.uniform1f(U.AGT,(ts/1000)%3600);gl.uniform1f(U.A,innerWidth/innerHeight);gl.uniform1f(U.p_sky,val.sky??1);gl.uniform1f(U.TH,AG_TRK);gl.uniform1f(U.AGZ,0);
   agQuadDraw();
   // Strecke, Gleiter, Leuchteffekte
   vizShipDraw(v,tgt,val);
   // aufs Display
   gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,cv.width,cv.height);gl.useProgram(AG_POSTP.pg);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tgt.t);
-  gl.uniform1i(AG_POSTP.u.S,0);gl.uniform1f(AG_POSTP.u.WRP,v.state==='game'?(g&&g.warp||0):0);gl.uniform1f(AG_POSTP.u.GLW,1);agQuadDraw();}
+  gl.uniform1i(AG_POSTP.u.S,0);gl.uniform1f(AG_POSTP.u.WRP,v.state==='game'?(g&&g.warp||0):0);gl.uniform1f(AG_POSTP.u.GLW,AG_TRK?.18:1);agQuadDraw();}
 requestAnimationFrame(agFrame60);
 
 // ---- Spiel starten / beenden
@@ -833,12 +900,15 @@ window.__agBack=()=>{if(!$('set').hidden){agSetOpen(false);return true;}if(!$('d
 function agMenuHS(){if(!$('mhs'))return;const H=agHS();const f=L=>L.length?L.slice(0,3).map((e,i)=>`<tr><td>${i+1}</td><td>${agEsc(e.n)}</td><td>${agFmt(e.t)}</td></tr>`).join(''):'<tr><td></td><td>no entries yet</td><td></td></tr>';
   $('mhs').innerHTML=`<div><b>Race time</b><table>${f(H.race)}</table></div><div><b>Fastest lap</b><table>${f(H.lap)}</table></div>`;}
 function agHSFull(){const H=agHS();const f=(L,t)=>`<b class="sh">${t}</b><table>`+(L.length?L.map((e,i)=>`<tr><td>${i+1}</td><td>${agEsc(e.n)}</td><td>${agFmt(e.t)}</td></tr>`).join(''):'<tr><td></td><td>no entries yet</td><td></td></tr>')+'</table>';
-  agDlg('Leaderboard',f(H.race,'Race time')+f(H.lap,'Fastest lap'),[['Reset',()=>{agDlg('Clear leaderboard?','All entries in both lists will be deleted.',[['Delete',()=>{try{localStorage.removeItem('vz_ag_hs');}catch{}agMenuHS();toast('Leaderboard cleared');}],['Cancel',null]]);return false;}],['Close',null]]);}
+  agDlg('Leaderboard',f(H.race,'Race time')+f(H.lap,'Fastest lap'),[['Reset',()=>{agDlg('Clear leaderboard?','All entries in both lists will be deleted.',[['Delete',()=>{try{localStorage.removeItem(agK('vz_ag_hs'));}catch{}agMenuHS();toast('Leaderboard cleared');}],['Cancel',null]]);return false;}],['Close',null]]);}
 function agDlg(title,html,btns){const d=$('dlg');d.innerHTML=`<div class="box"><h2>${title}</h2><div class="bd">${html}</div><div class="row">${btns.map((b,i)=>`<button type="button" data-i="${i}"${i===0&&btns.length>1?' class="pri"':''}>${b[0]}</button>`).join('')}</div></div>`;
   d.hidden=false;d.onclick=e=>{const b=e.target.closest('[data-i]');if(!b){if(e.target===d)d.hidden=true;return;}const fn=btns[+b.dataset.i][1];const r=fn?fn(d):undefined;if(r!==false)d.hidden=true;};}
 // Gleiterwahl: Pfeile oder Wischen über den Menühintergrund; die Kamera kreist um den gewählten Gleiter
 function agShipUI(){const i=agShipIx(AG_SET.ship),S=AG_SHIPS[i];$('mshn').textContent=S.nm;$('mshi').textContent=(i+1)+' / '+AG_SHIPS.length;$('mcr').textContent='Ship: '+S.cr+' · private use only';}
 function agShipSet(d){AG_SET.ship=(agShipIx(AG_SET.ship)+d+AG_SHIPS.length)%AG_SHIPS.length;agSaveSet();if(v.agg&&v.state!=='game'){const b=v.agg.best,bl=v.agg.blap;v.agg=agNew();v.agg.best=b;v.agg.blap=bl;}agShipUI();agVib(8);}
+function agTrkUI(){$('mtkn').textContent=AG_TRACKS[AG_TRK].nm;document.body.classList.toggle('toy',AG_TRK===1);$('msub').textContent=AG_TRK===1?'ANTIGRAVITY RACING IN TOYLAND':'ANTIGRAVITY RACING AT NIGHT';}
+function agTrkSet(d){AG_SET.trk=(AG_TRK+d+AG_TRACKS.length)%AG_TRACKS.length;agSaveSet();agTrkApply(AG_SET.trk);if(v.state!=='game')v.agg=agNew();agMenuHS();agTrkUI();agVib(8);}
+$('mtkp').onclick=()=>agTrkSet(-1);$('mtkx').onclick=()=>agTrkSet(1);agTrkApply(AG_SET.trk);agTrkUI();
 $('mshp').onclick=()=>agShipSet(-1);$('mshx').onclick=()=>agShipSet(1);
 {let sx=null,sy=0;const m=$('menu');m.addEventListener('pointerdown',e=>{sx=e.target.closest('button')?null:e.clientX;sy=e.clientY;});
  m.addEventListener('pointerup',e=>{if(sx===null)return;const dx=e.clientX-sx,dy=e.clientY-sy;sx=null;if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)*1.3)agShipSet(dx<0?1:-1);});
@@ -862,7 +932,7 @@ function agSetOpen(on){const el=$('set');if(!on){el.hidden=true;return;}
 $('set').addEventListener('input',e=>{const t=e.target;if(t.dataset.k){AG_SET[t.dataset.k]=+t.value;t.previousElementSibling.textContent=(+t.value).toFixed(2);agSaveSet();}
   if(t.dataset.fx){AG_FXV=+t.value;t.previousElementSibling.textContent=Math.round(AG_FXV*100)+' %';try{localStorage.setItem('vz_ag_fxv',String(AG_FXV));}catch{}}});
 $('set').addEventListener('click',e=>{const gb=e.target.closest('[data-gh]');if(gb){AG_SET.ghost=+gb.dataset.gh;agSaveSet();agSetOpen(true);return;}const c=e.target.closest('[data-c]');if(c){AG_SET.ctrl=+c.dataset.c;agSaveSet();agSetOpen(true);return;}const a=e.target.dataset.a;
-  if(a==='close'||e.target.id==='set'){agSetOpen(false);}else if(a==='def'){const c0=AG_SET.ctrl;AG_SET=Object.assign({},AG_SET_DEF,{ctrl:c0,ship:AG_SET.ship,ghost:AG_SET.ghost});agSaveSet();agSetOpen(true);toast('Defaults restored');}
+  if(a==='close'||e.target.id==='set'){agSetOpen(false);}else if(a==='def'){const c0=AG_SET.ctrl;AG_SET=Object.assign({},AG_SET_DEF,{ctrl:c0,ship:AG_SET.ship,ghost:AG_SET.ghost,trk:AG_SET.trk});agSaveSet();agSetOpen(true);toast('Defaults restored');}
   else if(a==='upd')checkUpdate(true);else if(a==='key')ghToken().then(ok=>{if(ok)checkUpdate(true);});});
 
 // ---- Updates aus dem GitHub-Repo (privat: braucht einen Schlüssel mit Lesezugriff)
