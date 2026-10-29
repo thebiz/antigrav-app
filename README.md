@@ -3,7 +3,7 @@
 Antigrav-Rennspiel fürs Handy (aus VIZ ausgelagert). Die Spielseite ist `antigrav.html`; GitHub Actions baut daraus die APK und veröffentlicht sie als Release `build-N`.
 
 - Strecke, Gleiter und Leuchteffekte: WebGL (Dreiecke), Himmel als Shader
-- Drei Strecken: „Neon Night“, „Sakura Toys“ (Pastell, Spielzeugfiguren, Kirschblüten) und „Talon’s Reach“ (Schlucht in der Dämmerung, nachempfunden); Bestzeiten, Rangliste und Geist je Strecke
+- Drei Strecken: „Neon Night“, „Sakura Toys“ (Pastell, Spielzeugfiguren, Kirschblüten) und „Abyss“ (Tiefsee, gläserne Röhren in Steilkurven, Leuchtwesen); Bestzeiten, Rangliste und Geist je Strecke
 - Fünf Gleiter zur Auswahl (Menü: Pfeile oder Wischen), die Gegner fliegen die anderen. Rein privates Projekt.
   - „WipeOut – Feisar“, „WipeOut – Qirex“, „WipeOut – Assegai“ von Nobby76 (CC BY 4.0)
   - „Apex Wipeout Anti-grav Racer“ von rafta (CC BY-NC 4.0)

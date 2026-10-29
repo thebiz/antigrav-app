@@ -44,7 +44,7 @@ body.toy .vz-game .vzg-top,body.toy .vz-game .vzg-gd,body.toy #menu .sub,body.to
 
 const NV=window.AgNative||{};
 const agVib=p=>{try{if(NV.vibrate){NV.vibrate(String([].concat(p).map(x=>Math.round(x)).join(',')));return;}navigator.vibrate&&navigator.vibrate(p);}catch{}};
-const AG_SKY_SRC="// Antigrav: Himmel (Strecke, Gleiter und Leuchteffekte werden danach als 3D-Modelle dr\u00fcbergezeichnet)\nuniform float AGZ,AGT,AGFV;uniform vec3 AGRO,AGTA,AGUP;vec3 SUN;\nvec3 skyToy(vec3 rd){float h=rd.y,an=atan(rd.x,rd.z);vec3 hor=vec3(.99,.88,.9),mid=vec3(.94,.8,.95),top=vec3(.6,.78,.99);\n vec3 c=mix(hor,mid,smoothstep(0.,.16,h));c=mix(c,top,smoothstep(.12,.62,h));\n vec3 sd=normalize(vec3(.35,.24,1.));float s=dot(rd,sd);c+=vec3(1.,.85,.75)*pow(max(0.,s),30.)*.25;c=mix(c,vec3(1.,.98,.92),smoothstep(.9986,.9992,s));\n if(h>0.){vec2 cu=rd.xz/(h+.08)*.5;float cl=fbm(cu*1.3+vec2(AGT*.006,0.));float m=smoothstep(.5,.6,cl)*smoothstep(.0,.07,h)*(1.-smoothstep(.45,.75,h));\n  c=mix(c,mix(vec3(1.,.9,.95),vec3(1.),smoothstep(.55,.72,cl)),m*.92);}\n float fa=an+.55,fh=min(.13-abs(fa)*.4,.115);if(fh>0.&&h<fh){float sn=smoothstep(.074,.08,h+.008*sin(fa*80.));c=mix(mix(vec3(.62,.64,.9),vec3(.99,.98,1.),sn),hor,.22);}\n for(int k=0;k<2;k++){float fk=float(k);float mh=.018+.032*fbm(vec2(an*(2.2+fk*1.6)+fk*5.,fk*2.))-.012*fk;if(h<mh)c=mix(k==0?vec3(.8,.74,.96):vec3(.68,.9,.8),hor,.3-.12*fk);}\n if(h<0.)c=mix(c,vec3(.98,.88,.9),smoothstep(0.,-.02,h));return c;}\nvec3 skyCan(vec3 rd){float h=rd.y,an=atan(rd.x,rd.z);vec3 hor=vec3(1.,.5,.26),mid=vec3(.62,.28,.4),top=vec3(.05,.07,.2);\n vec3 c=mix(hor,mid,smoothstep(0.,.13,h));c=mix(c,top,smoothstep(.1,.55,h));vec3 sd=normalize(vec3(-.4,.05,1.));float s=max(0.,dot(rd,sd));c+=vec3(1.,.55,.25)*pow(s,8.)*.5+vec3(1.,.8,.5)*pow(s,300.)*2.;\n if(h>.05){vec2 sp=vec2(an*90.,h*160.);vec2 ci=floor(sp);c+=vec3(.8,.85,1.)*step(.988,hash(ci))*smoothstep(.15,.45,h)*.8*(1.-step(.5,length(fract(sp)-.5)*2.));}\n for(int k=0;k<2;k++){float fk=float(k);float r=fbm(vec2(an*(3.+fk*2.)+fk*4.,fk*3.));float pk=abs(fract(an*(5.+fk*4.)+r)-.5);float mh=.05+.12*(1.-fk*.45)*r-.05*pk-.02*fk;\n  if(h<mh){vec3 rc=mix(vec3(.2,.16,.25),vec3(.1,.08,.12),fk);float sn=smoothstep(mh-.03,mh-.015,h)*(1.-fk*.6);c=mix(rc,mix(vec3(1.,.8,.85),vec3(.9,.7,.8),fk),sn*.85);c=mix(c,hor*.6,.25-.12*fk);}}\n float tr=.012+.008*noise(vec2(an*12.,1.))+.022*pow(abs(fract(an*55.)-.5)*2.,1.5)*step(.35,noise(vec2(an*8.,3.)));if(h<tr)c=vec3(.025,.03,.035);\n if(h<0.)c=mix(c,vec3(.12,.07,.1),smoothstep(0.,-.05,h));return c;}\nvec3 sky(vec3 rd,bool full){if(TH>1.5)return skyCan(rd);if(TH>.5)return skyToy(rd);float h=rd.y,nt=p_sky;float sd=max(0.,dot(rd,SUN));\n vec3 hor=mix(vec3(1.,.5,.26),vec3(.035,.04,.07),nt),top=mix(vec3(.12,.17,.36),vec3(.002,.003,.01),nt),mid=mix(vec3(.62,.32,.42),vec3(.012,.014,.03),nt);\n vec3 c=mix(hor,mid,smoothstep(.0,.12,h));c=mix(c,top,smoothstep(.1,.55,h));\n c+=vec3(1.,.6,.3)*pow(sd,10.)*.22*(1.-nt)+vec3(1.,.82,.55)*pow(sd,1400.)*5.*(1.-nt);\n // Nacht: Sterne, Mond, Milchstra\u00dfen-Schleier\n if(nt>.01&&h>-.02){vec2 sp=vec2(atan(rd.x,rd.z)*90.,h*160.);vec2 ci=floor(sp);float st=step(.985,hash(ci))*smoothstep(.0,.08,h);float tw=.6+.4*sin(AGT*(2.+hash(ci+3.)*4.)+hash(ci)*20.);\n  c+=vec3(.75,.8,1.)*st*tw*(.35+.65*hash(ci+7.))*nt*(1.-step(.5,length(fract(sp)-.5)*2.));\n  vec3 md=normalize(vec3(.5,.32,.8));float mo=dot(rd,md);c+=vec3(.85,.9,1.)*smoothstep(.9994,.9997,mo)*nt+vec3(.25,.3,.45)*pow(max(0.,mo),60.)*.25*nt;\n  c+=vec3(.05,.05,.09)*fbm(vec2(atan(rd.x,rd.z)*3.,h*6.)+3.)*smoothstep(.05,.4,h)*smoothstep(.9,.3,abs(rd.x-.3))*nt;}\n if(full&&h>.01){vec2 cu=rd.xz/(h+.06)*.55;float cl=fbm(cu*vec2(1.,3.)+vec2(0.,AGT*.01));cl=smoothstep(.5,.85,cl)*smoothstep(.01,.12,h)*(1.-smoothstep(.35,.7,h));\n  vec3 cc=mix(mix(vec3(1.,.55,.35),vec3(.03,.035,.06),nt),vec3(.95,.75,.6),pow(sd,3.)*(1.-nt));c=mix(c,cc*.9,cl*.75);}\n // Gebirgsketten: fern hell im Dunst, nah dunkler, Grate vom Abendlicht gestreift\n float an=atan(rd.x,rd.z);\n for(int k=0;k<3;k++){float fk=float(k);float fr=1.6+fk*1.7;\n  float mh=.015+.05*(1.-fk*.25)*fbm(vec2(an*fr+fk*7.3,fk*3.1))+.035*fk*noise(vec2(an*fr*3.,fk));mh-=.025*fk;\n  if(h<mh){float hz=.75-fk*.28;vec3 mc=mix(mix(vec3(.12,.08,.14),vec3(.004,.005,.01),nt),hor*.9,hz*(1.-nt*.6));\n   mc+=mix(vec3(1.,.55,.3),vec3(.2),nt)*smoothstep(mh-.006,mh,h)*pow(sd,2.)*.6*(1.-fk*.3);c=mc;}}\n // unter dem Horizont: Talnebel, Sonne spiegelt sich darin\n if(h<-.02){float fd=smoothstep(-.02,-.35,h);c=mix(c,mix(hor*.55,mix(vec3(.05,.05,.09),vec3(.01,.01,.02),nt),fd),smoothstep(-.02,-.06,h));\n  c+=vec3(1.,.6,.3)*pow(max(0.,dot(normalize(vec3(rd.x,-rd.y,rd.z)),SUN)),30.)*.3*(1.-nt)*(1.-fd);}\n return c;}\nvoid main(){vec2 c0=cuv();SUN=normalize(vec3(-.4,.07,1.));vec3 cf=normalize(AGTA-AGRO),cr=normalize(cross(AGUP,cf)),cu=cross(cf,cr);\n vec3 rd=normalize(cf*max(AGFV,.5)+cr*c0.x+cu*c0.y);vec3 col=sky(rd,true)*mix(1.,.4,p_sky);if(AGZ>99.)col=vec3(1.);\n if(abs(TH-1.)>.5)col=(col*(2.51*col+.03))/(col*(2.43*col+.59)+.14);gl_FragColor=vec4(pow(clamp(col,0.,1.),vec3(.95)),1.);}\n";
+const AG_SKY_SRC="// Antigrav: Himmel (Strecke, Gleiter und Leuchteffekte werden danach als 3D-Modelle dr\u00fcbergezeichnet)\nuniform float AGZ,AGT,AGFV;uniform vec3 AGRO,AGTA,AGUP;vec3 SUN;\nvec3 skyToy(vec3 rd){float h=rd.y,an=atan(rd.x,rd.z);vec3 hor=vec3(.99,.88,.9),mid=vec3(.94,.8,.95),top=vec3(.6,.78,.99);\n vec3 c=mix(hor,mid,smoothstep(0.,.16,h));c=mix(c,top,smoothstep(.12,.62,h));\n vec3 sd=normalize(vec3(.35,.24,1.));float s=dot(rd,sd);c+=vec3(1.,.85,.75)*pow(max(0.,s),30.)*.25;c=mix(c,vec3(1.,.98,.92),smoothstep(.9986,.9992,s));\n if(h>0.){vec2 cu=rd.xz/(h+.08)*.5;float cl=fbm(cu*1.3+vec2(AGT*.006,0.));float m=smoothstep(.5,.6,cl)*smoothstep(.0,.07,h)*(1.-smoothstep(.45,.75,h));\n  c=mix(c,mix(vec3(1.,.9,.95),vec3(1.),smoothstep(.55,.72,cl)),m*.92);}\n float fa=an+.55,fh=min(.13-abs(fa)*.4,.115);if(fh>0.&&h<fh){float sn=smoothstep(.074,.08,h+.008*sin(fa*80.));c=mix(mix(vec3(.62,.64,.9),vec3(.99,.98,1.),sn),hor,.22);}\n for(int k=0;k<2;k++){float fk=float(k);float mh=.018+.032*fbm(vec2(an*(2.2+fk*1.6)+fk*5.,fk*2.))-.012*fk;if(h<mh)c=mix(k==0?vec3(.8,.74,.96):vec3(.68,.9,.8),hor,.3-.12*fk);}\n if(h<0.)c=mix(c,vec3(.98,.88,.9),smoothstep(0.,-.02,h));return c;}\nvec3 skyCan(vec3 rd){float h=rd.y,an=atan(rd.x,rd.z);vec3 c=mix(vec3(.0,.02,.04),vec3(.0,.005,.015),smoothstep(-.1,.6,h));\n float sh=pow(max(0.,h),1.5)*(.5+.5*sin(an*14.+AGT*.15+sin(an*5.)*2.))*(.5+.5*sin(an*31.-AGT*.1));c+=vec3(0.,.05,.07)*sh*.6;\n vec2 sp=vec2(an*70.,h*120.+AGT*.4);vec2 ci=floor(sp);c+=vec3(.3,.7,.8)*step(.993,hash(ci))*(1.-step(.5,length(fract(sp)-.5)*2.))*.35;return c;}\nvec3 sky(vec3 rd,bool full){if(TH>1.5)return skyCan(rd);if(TH>.5)return skyToy(rd);float h=rd.y,nt=p_sky;float sd=max(0.,dot(rd,SUN));\n vec3 hor=mix(vec3(1.,.5,.26),vec3(.035,.04,.07),nt),top=mix(vec3(.12,.17,.36),vec3(.002,.003,.01),nt),mid=mix(vec3(.62,.32,.42),vec3(.012,.014,.03),nt);\n vec3 c=mix(hor,mid,smoothstep(.0,.12,h));c=mix(c,top,smoothstep(.1,.55,h));\n c+=vec3(1.,.6,.3)*pow(sd,10.)*.22*(1.-nt)+vec3(1.,.82,.55)*pow(sd,1400.)*5.*(1.-nt);\n // Nacht: Sterne, Mond, Milchstra\u00dfen-Schleier\n if(nt>.01&&h>-.02){vec2 sp=vec2(atan(rd.x,rd.z)*90.,h*160.);vec2 ci=floor(sp);float st=step(.985,hash(ci))*smoothstep(.0,.08,h);float tw=.6+.4*sin(AGT*(2.+hash(ci+3.)*4.)+hash(ci)*20.);\n  c+=vec3(.75,.8,1.)*st*tw*(.35+.65*hash(ci+7.))*nt*(1.-step(.5,length(fract(sp)-.5)*2.));\n  vec3 md=normalize(vec3(.5,.32,.8));float mo=dot(rd,md);c+=vec3(.85,.9,1.)*smoothstep(.9994,.9997,mo)*nt+vec3(.25,.3,.45)*pow(max(0.,mo),60.)*.25*nt;\n  c+=vec3(.05,.05,.09)*fbm(vec2(atan(rd.x,rd.z)*3.,h*6.)+3.)*smoothstep(.05,.4,h)*smoothstep(.9,.3,abs(rd.x-.3))*nt;}\n if(full&&h>.01){vec2 cu=rd.xz/(h+.06)*.55;float cl=fbm(cu*vec2(1.,3.)+vec2(0.,AGT*.01));cl=smoothstep(.5,.85,cl)*smoothstep(.01,.12,h)*(1.-smoothstep(.35,.7,h));\n  vec3 cc=mix(mix(vec3(1.,.55,.35),vec3(.03,.035,.06),nt),vec3(.95,.75,.6),pow(sd,3.)*(1.-nt));c=mix(c,cc*.9,cl*.75);}\n // Gebirgsketten: fern hell im Dunst, nah dunkler, Grate vom Abendlicht gestreift\n float an=atan(rd.x,rd.z);\n for(int k=0;k<3;k++){float fk=float(k);float fr=1.6+fk*1.7;\n  float mh=.015+.05*(1.-fk*.25)*fbm(vec2(an*fr+fk*7.3,fk*3.1))+.035*fk*noise(vec2(an*fr*3.,fk));mh-=.025*fk;\n  if(h<mh){float hz=.75-fk*.28;vec3 mc=mix(mix(vec3(.12,.08,.14),vec3(.004,.005,.01),nt),hor*.9,hz*(1.-nt*.6));\n   mc+=mix(vec3(1.,.55,.3),vec3(.2),nt)*smoothstep(mh-.006,mh,h)*pow(sd,2.)*.6*(1.-fk*.3);c=mc;}}\n // unter dem Horizont: Talnebel, Sonne spiegelt sich darin\n if(h<-.02){float fd=smoothstep(-.02,-.35,h);c=mix(c,mix(hor*.55,mix(vec3(.05,.05,.09),vec3(.01,.01,.02),nt),fd),smoothstep(-.02,-.06,h));\n  c+=vec3(1.,.6,.3)*pow(max(0.,dot(normalize(vec3(rd.x,-rd.y,rd.z)),SUN)),30.)*.3*(1.-nt)*(1.-fd);}\n return c;}\nvoid main(){vec2 c0=cuv();SUN=normalize(vec3(-.4,.07,1.));vec3 cf=normalize(AGTA-AGRO),cr=normalize(cross(AGUP,cf)),cu=cross(cf,cr);\n vec3 rd=normalize(cf*max(AGFV,.5)+cr*c0.x+cu*c0.y);vec3 col=sky(rd,true)*mix(1.,.4,p_sky);if(AGZ>99.)col=vec3(1.);\n if(abs(TH-1.)>.5)col=(col*(2.51*col+.03))/(col*(2.43*col+.59)+.14);gl_FragColor=vec4(pow(clamp(col,0.,1.),vec3(.95)),1.);}\n";
 // ---------- Antigrav: echte 3D-Modelle der Gleiter (Dateien ship-*.bin, aus glTF umgepackt) ----------
 // Pose und Kamera werden exakt wie im Strecken-Shader gerechnet, das Modell wird danach mit Tiefenpuffer drübergezeichnet.
 const VZ_SHIP_VS=`precision highp float;attribute vec3 p,nn;attribute vec2 tc;uniform vec3 S0,SR,SU,SF,RO,CF,CR,CU;uniform float FOV,A,JET,ISJ;varying vec2 vt;varying vec3 vn,vw;
@@ -104,11 +104,12 @@ const agLz=z=>((z-20)%700+700)%700+20,agS=u=>{u=Math.max(0,Math.min(1,u));return
 const AG_TRACKS=[
  {id:'neon',nm:'Neon Night',seg:[[80,120,18],[240,140,-26],[420,110,14],[560,110,-6]],hill:[[2.4,2,0],[.8,5,1]]},
  {id:'sakura',nm:'Sakura Toys',seg:[[60,100,-14],[180,110,22],[300,100,-12],[425,120,20],[575,110,-16]],hill:[[2.8,2,1.2],[1.1,7,.4]]},
- // Talon’s Reach (nachempfunden): schnelle Linke, Knick in den Felstunnel, enges S, Abfahrt zum Sprung, lange Rechte, Felstunnel, Bergauf zurück
- {id:'talon',nm:'Talon’s Reach',seg:[[70,80,-30],[165,40,24],[215,30,-8],[255,45,28],[310,45,-32],[430,70,40],[520,55,-22]],hill:[[5,2,.3],[2,6,1.1]]}];
-let AG_TRK=0,AG_SEG=AG_TRACKS[0].seg,AG_HILL=AG_TRACKS[0].hill;
+ // Tiefsee: Steilkurven, zwei gläserne Röhren in Kurven (die zweite gleich nach dem Sprung), sanfte Hügel – Kurven flach genug, dass das Tempo gleich bleibt
+ {id:'deep',nm:'Abyss',seg:[[60,100,-24],[160,85,22],[275,90,-22],[425,80,20],[510,85,-20],[615,95,24]],hill:[[2.2,2,.6],[1.2,5,2]],tun:[[160,245],[430,595]],bank:.85}];
+let AG_TRK=0,AG_SEG=AG_TRACKS[0].seg,AG_HILL=AG_TRACKS[0].hill,AG_TUN=[[160,245],[510,595]],AG_BKM=.6;
+const agInTun=(zl,m)=>AG_TUN.some(([a,b])=>zl>=a-(m||0)&&zl<=b+(m||0));   // zl: Lage in der Runde
 const agTrkIx=i=>Math.max(0,Math.min(AG_TRACKS.length-1,Math.round(+i||0)));
-function agTrkApply(i){AG_TRK=agTrkIx(i);AG_SEG=AG_TRACKS[AG_TRK].seg;AG_HILL=AG_TRACKS[AG_TRK].hill;}
+function agTrkApply(i){AG_TRK=agTrkIx(i);const T=AG_TRACKS[AG_TRK];AG_SEG=T.seg;AG_HILL=T.hill;AG_TUN=T.tun||[[160,245],[510,595]];AG_BKM=T.bank||.6;}
 const agK=k=>AG_TRK?k+'_'+AG_TRACKS[AG_TRK].id:k;   // Bestzeiten, Rangliste und Geist je Strecke
 const AGT_={pc:1,tw:2.1,bkf:1,
   px:z=>{const l=agLz(z);let r=0;for(const [a,n,d] of AG_SEG)r+=d*agS((l-a)/n);return AGT_.pc*r;},
@@ -117,7 +118,7 @@ const AGT_={pc:1,tw:2.1,bkf:1,
   py:z=>{const l=z-20;let r=0;for(const [a,k,f] of AG_HILL)r+=a*Math.sin(l*k*.0089759790+f);return r;},dpy:z=>{const l=z-20;let r=0;for(const [a,k,f] of AG_HILL)r+=a*k*.0089759790*Math.cos(l*k*.0089759790+f);return r;},
   rmp:z=>{z=agLz(z);const Jn=Math.ceil((z-60)/350)*350+60;if(Jn<300||Jn>700)return 0;const u=Math.max(0,Math.min(1,(z-(Jn-10))/10));return .45*u*u;},
   gap:z=>{z=agLz(z);const J=Math.floor((z-60)/350)*350+60;if(J<300)return false;return z>J&&z<J+7;}};
-AGT_.bk=z=>Math.max(-.6,Math.min(.6,-AGT_.d2px(z)*60))*AGT_.bkf;
+AGT_.bk=z=>Math.max(-AG_BKM,Math.min(AG_BKM,-AGT_.d2px(z)*60))*AGT_.bkf;
 const agMd=(k,n)=>(k%n+n)%n;AGT_.bpx=k=>-Math.sign(AGT_.d2px(k*35+6))*.5*AGT_.tw/1.6;AGT_.wpx=k=>.55*Math.sin(agMd(k,20)*1.3+.4)*AGT_.tw/1.6;AGT_.obx=k=>.7*Math.sin(agMd(k,14)*2.7+.5)*AGT_.tw/1.6;
 AGT_.obOk=k=>{const zc=agLz(k*50+25);let jd=((zc-60)%350+350)%350;jd=Math.min(jd,350-jd);return zc>=90&&jd>=18&&zc<=690&&agMd(k,2)===0;};
 const AG_WN={rak:'Missile',lenk:'Homing',mine:'Mines',schild:'Shield',turbo:'Turbo',beben:'Quake',auto:'Auto',wand:'Wall'};
@@ -221,7 +222,7 @@ function vizAgHud(v){let h=v.dlg.querySelector('.vz-game');if(!h){h=document.cre
   if(!h.dataset.rs){h.dataset.rs=1;const stop=el=>['pointerdown','pointerup','pointermove','click','touchstart','touchmove','dblclick'].forEach(t=>el.addEventListener(t,e=>e.stopPropagation()));const res=h.querySelector('.vzg-res'),rp=h.querySelector('.vzg-rp');stop(res);stop(rp.querySelector('button'));
    res.addEventListener('click',e=>{const a=e.target.dataset.r;if(!a)return;const g0=v.agg;
      if(a==='hsok'&&g0){const inp=res.querySelector('input');const nm=(inp&&inp.value.trim()||'Pilot').slice(0,14);try{localStorage.setItem('vz_ag_name',nm);}catch{}
-       const H=agHS(),M={},d=Date.now();for(const k of ['race','lap']){const t=g0.hsAsk[k];if(!t)continue;H[k].push({n:nm,t,d});H[k].sort((x,y)=>x.t-y.t);H[k]=H[k].slice(0,10);M[k]=H[k].findIndex(x=>x.d===d&&x.t===t);}
+       const H=agHS(),M={},d=Date.now();for(const k of ['race','lap']){const t=g0.hsAsk[k];if(!t)continue;H[k].push({n:nm,t,d});H[k].sort((x,y)=>x.t-y.t);H[k]=H[k].slice(0,5);M[k]=H[k].findIndex(x=>x.d===d&&x.t===t);}
        try{localStorage.setItem(agK('vz_ag_hs'),JSON.stringify(H));}catch{}g0.hsMine=M;g0.hsDone=true;g0.hsForm=false;g0.view='hs';try{inp&&inp.blur();}catch{}agResDraw(g0,res);return;}
      if(a==='hs'&&g0){g0.view='hs';agResDraw(g0,res);return;}if(a==='back'&&g0){g0.view='';agResDraw(g0,res);return;}
      if(a==='end'){closeViz();return;}
@@ -231,8 +232,8 @@ function vizAgHud(v){let h=v.dlg.querySelector('.vz-game');if(!h){h=document.cre
 // Rangliste nach dem Ziel: Platz, Name, Gesamtzeit (oder laufende Runde), Rundenzeiten; schnellste Runde markiert
 const AG_NM=['You','Vega','Kato','Mira'];
 // Bestenliste (Top Ten): beste Gesamtzeit und schnellste Runde, mit Namen
-const agHS=()=>{try{const o=JSON.parse(localStorage.getItem(agK('vz_ag_hs'))||'{}');return {race:o.race||[],lap:o.lap||[]};}catch{return {race:[],lap:[]};}};
-const agHSq=(L,t)=>t&&(L.length<10||t<L[L.length-1].t);
+const agHS=()=>{try{const o=JSON.parse(localStorage.getItem(agK('vz_ag_hs'))||'{}');return {race:(o.race||[]).slice(0,5),lap:(o.lap||[]).slice(0,5)};}catch{return {race:[],lap:[]};}};
+const agHSq=(L,t)=>t&&(L.length<5||t<L[Math.min(L.length,5)-1].t);
 const agEsc=x=>String(x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function agResDraw(g,el){
   if(g.hsAsk&&!g.hsDone){if(g.hsForm)return;g.hsForm=true;const q=g.hsAsk;let nm='';try{nm=localStorage.getItem('vz_ag_name')||'';}catch{}
@@ -278,7 +279,7 @@ function agReplayStep(v,ts,R,hud,A,val){const now=performance.now(),rt=now-R.t0,
   if(now-R.cT>cm[2]*1000&&cm[0]!=='side'){R.ci=(R.ci+1)%AG_CAMS.length;R.cT=now;cm=AG_CAMS[R.ci];R.sp=null;}
   else if(cm[0]==='side'&&now-R.cT>cm[2]*1000*1.6){R.ci=(R.ci+1)%AG_CAMS.length;R.cT=now;cm=AG_CAMS[R.ci];R.sp=null;}
   const {nz,ad,mu}=agV,P=agPoseOf(zs,R.lat,R.roll,.16+R.h,R.psi);let cam=null;
-  if(cm[0]==='side'){if(!R.sp){R.sk=-(R.sk||1);R.sp={z:zs+20+Math.random()*8,s:R.sk};}const zl=agLz(R.sp.z),tz=zl%350,inT=tz>=158&&tz<=247;const Q=agPoseOf(R.sp.z,R.sp.s*(inT?TW*.8:TW+1.5),0,inT?1.3:.9,0);cam={ro:Q.S0,ta:ad(P.S0,mu(P.fw,.6)),up:[0,1,0]};}
+  if(cm[0]==='side'){if(!R.sp){R.sk=-(R.sk||1);R.sp={z:zs+20+Math.random()*8,s:R.sk};}const zl=agLz(R.sp.z),inT=agInTun(zl,2);const Q=agPoseOf(R.sp.z,R.sp.s*(inT?TW*.8:TW+1.5),0,inT?1.3:.9,0);cam={ro:Q.S0,ta:ad(P.S0,mu(P.fw,.6)),up:[0,1,0]};}
   else if(cm[0]==='cock')cam={ro:ad(P.S0,mu(P.SF,.3),mu(P.SUp,.2)),ta:ad(P.S0,mu(P.SF,10),mu(P.SUp,.15)),up:P.SUp,hide:true};
   else if(cm[0]==='heli')cam={ro:ad(P.S0,mu(P.fw,-6),[0,6,0],mu(P.rr,2)),ta:ad(P.S0,mu(P.fw,4)),up:[0,1,0],top:true};
   else if(cm[0]==='front')cam={ro:ad(P.S0,mu(P.fw,5),mu(P.uu,.6),mu(P.rr,.5)),ta:ad(P.S0,mu(P.uu,.15)),up:[0,1,0]};
@@ -417,7 +418,7 @@ function vizAgGame(v,ts,val){if(!v.agg)v.agg=agNew();const g=v.agg;g.best=g.best
     {const ln=Math.max(0,Math.min(AG_NL,Math.floor((g.z+2.6-AG_ZST)/AG_LAP)));if(!g.lapT)g.lapT=g.race;
      if(ln>g.lap){const lt=ts-g.lapT;g.lapT=ts;g.lap=ln;g.laps.push(lt);const nb=!g.blap||lt<g.blap;if(nb){g.blap=lt;try{localStorage.setItem(agK('vz_ag_blap'),String(lt));}catch{}}
       if(ln<AG_NL){mid.style.opacity=1;mid.innerHTML=(ln===AG_NL-1?'FINAL LAP':'LAP '+(ln+1))+'<small>'+agFmt(lt)+(nb?' · fastest lap':'')+'</small>';sf('pick');agBuzz([20,30,20]);const myL=ln;setTimeout(()=>{if(v.agg===g&&g.lap===myL&&g.st==='race')mid.style.opacity=0;},1800);}}}
-    if(g.z+2.6>=AG_ZFI){g.st='done';g.fin=ts-g.race;g.t0=ts;g.place=place;const nb=!g.best||g.fin<g.best;if(nb){g.best=g.fin;try{localStorage.setItem(agK('vz_ag_best3'),String(g.fin));}catch{}agGhostSave(v,g);}
+    if(g.z+2.6>=AG_ZFI){g.st='done';g.fin=ts-g.race;g.t0=ts;g.place=place;const nb=!g.best||g.fin<g.best;if(nb){g.best=g.fin;try{localStorage.setItem(agK('vz_ag_best3'),String(g.fin));}catch{}}agGhostLoad(v);if(!v.ghost||!v.ghost.f||g.fin<v.ghost.t)agGhostSave(v,g);
       mid.style.opacity=1;mid.innerHTML=(place===1?'VICTORY':['1ST','2ND','3RD','4TH'][place-1]+' PLACE')+'<small>'+agFmt(g.fin)+(nb?' · new record':'')+'</small>';g.nb=nb;g.auto=0;hud.classList.add('fin');{const H=agHS(),bl=g.laps.length?Math.min(...g.laps):0,q={race:agHSq(H.race,g.fin)?g.fin:0,lap:agHSq(H.lap,bl)?bl:0};if(q.race||q.lap)g.hsAsk=q;}sf('win');try{agVib([30,60,30]);}catch{}}}
   if(g.race&&g.st!=='count')for(const o of g.opp){const ln=Math.max(0,Math.min(AG_NL,Math.floor((o.z+2.6-AG_ZST)/AG_LAP)));if(ln>(o.lap||0)){o.laps=o.laps||[];o.laps.push(ts-(o.lapT||g.race));o.lapT=ts;o.lap=ln;if(ln>=AG_NL&&!o.fin)o.fin=ts-g.race;}}
   if(g.st==='done'){const res=hud.querySelector('.vzg-res');if(ts-g.t0>2200){if(res.hidden){res.hidden=false;mid.style.opacity=0;}if(ts-(g.resT||0)>300){g.resT=ts;agResDraw(g,res);}}}
@@ -501,7 +502,7 @@ vec3 graffiti(float ang,float zz){float ax=ang*(TW+.17);vec2 c=vec2(floor(zz/3.4
  float rt=(hash(c+17.)-.5)*.6;q=mat2(cos(rt),-sin(rt),sin(rt),cos(rt))*q;
  float d=grSym(floor(hash(c+5.)*8.),q)*sc;float hc=hash(c+23.);vec3 col=hc<.45?vec3(1.,.95,.08):hc<.8?vec3(1.,.12,.62):vec3(.35,1.,.15);
  return col*(aal(d,.045)*2.4+exp(-d*7.)*.35);}
-void main(){bool TT=TH>1.5,TY=TH>.5&&!TT;CY=TY?vec3(.5,.85,1.):TT?vec3(.4,.85,1.):vec3(0.,.78,1.);MG=TY?vec3(1.,.5,.7):TT?vec3(1.,.38,.12):vec3(1.,.06,.42);AM=TY?vec3(1.,.82,.45):TT?vec3(1.,.82,.1):vec3(1.,.62,.08);
+void main(){bool TT=TH>1.5,TY=TH>.5&&!TT;CY=TY?vec3(.5,.85,1.):TT?vec3(0.,.95,.85):vec3(0.,.78,1.);MG=TY?vec3(1.,.5,.7):TT?vec3(.3,.4,1.):vec3(1.,.06,.42);AM=TY?vec3(1.,.82,.45):TT?vec3(.3,1.,.75):vec3(1.,.62,.08);
  vec3 p=vw;vec3 n=normalize(vn);if(!gl_FrontFacing)n=-n;float qx=vt.x,qy=vt.y,mat=vt.z,zz=p.z;
  float zl=lz(zz),dk=TH>.5?0.:smoothstep(509.,514.,zl)*smoothstep(596.,591.,zl);   // dunkler Graffiti-Tunnel
  vec3 vd=p-RO;float t=length(vd);vec3 rd=vd/t;if(dot(n,rd)>0.)n=-n;vec3 rf=reflect(rd,n);
@@ -538,13 +539,11 @@ void main(){bool TT=TH>1.5,TY=TH>.5&&!TT;CY=TY?vec3(.5,.85,1.):TT?vec3(.4,.85,1.
    float pd=smoothstep(.2,.16,length(fract(vec2(qx*1.4,zz*1.4))-.5));vec3 ta=vec3(.6,.55,.82)*(.94+.06*nz);ta=mix(ta,vec3(.82,.76,.95),pd*.7);
    float cb=step(TW-.3,abs(qx));ta=mix(ta,mix(vec3(1.,.45,.65),vec3(1.),step(.5,fract(zz*.8))),cb);ta=mix(ta,vec3(1.,.88,.5),midL);
    float pads0=0.;float pads=max(step(.8,max(em.r,max(em.g,em.b))),step(abs(lz(zz+350.)-370.),.5));alb=mix(ta,alb,pads);em*=.6;spec=.3;refl=.04;gl=24.;}
-  if(TT){float pd2=max(step(.8,max(em.r,max(em.g,em.b))),step(abs(lz(zz+350.)-370.),.5));vec3 ta=vec3(.13,.14,.17)*(.85+.3*nz);ta=mix(ta,vec3(.85),max(edL,midL*.8));
-   ta=mix(ta,mix(vec3(.9,.75,.1),vec3(.05),step(.5,fract(zz*.6))),step(TW-.22,abs(qx))*step(abs(qx),TW-.1));alb=mix(ta,alb,pd2);em*=.75;}}
+  if(TT){alb=vec3(.035,.05,.065)*(.8+.4*nz);spec=.9;gl=60.;refl=.2;}}
  else if(mat<2.5){ // Leitplanke: Neonbänder mit Lauflichtern
   alb=vec3(.09,.095,.11);float sd=qx>0.?.5:0.;vec3 nc=qx>0.?MG:CY,nc2=vec3(.9,.95,1.)*.35;float run=exp(-pow(fract(zz*.04-T*.9+sd)-.5,2.)*90.);
   em+=(nc*aal(abs(qy-.175),.018)*(1.8+2.2*run+1.2*BO)*LG+nc2*aal(abs(qy-.02),.008)*(.6+1.5*run)*LG)*(1.-.92*dk);
   float lamp=aal(length(vec2((fract(zz*.9)-.5)/.9,(qy-.1)*1.)),.035);em+=vec3(1.,.85,.7)*lamp*.5*LG*(1.-dk);spec=.8;gl=40.;
-  if(TT){float hz=step(.5,fract((zz+qy*1.5)*1.4));alb=qy<.12?mix(vec3(.95,.75,.08),vec3(.04),hz):vec3(.3,.32,.36);em*=.8;spec=.6;}
   if(TY){float st=step(.5,fract(zz*1.2+qy*2.5));alb=mix(qx>0.?vec3(.35,.85,.68):vec3(1.,.5,.68),vec3(1.),st);em*=.35;spec=.4;gl=20.;}}
  else if(mat<3.5){ // Werbetafel: klare Grafik, leuchtet, Neonrahmen
   float k=mod(floor(zz/20.),35.);float h=fract(sin(k*41.3)*437.1);vec2 u=vu;
@@ -555,14 +554,15 @@ void main(){bool TT=TH>1.5,TY=TH>.5&&!TT;CY=TY?vec3(.5,.85,1.):TT?vec3(.4,.85,1.
   if(TY){vec2 b=vec2(vu.x*1.6,vu.y*.3);vec2 c=vec2(mod(b.x,.6)-.3,b.y);float fc=step(length(c),.2);alb=mix(neo(h*3.+.2)*.95,vec3(1.,.96,.9),fc);
    alb=mix(alb,vec3(.25,.18,.22),fc*(step(length(c-vec2(-.07,.04)),.025)+step(length(c-vec2(.07,.04)),.025)+aal(abs(length(c-vec2(0.,.0))-.07),.012)*step(c.y,-.02)));alb=mix(alb,vec3(1.,.6,.7),fc*step(length((c-vec2(.12,-.04))*vec2(1.,1.6)),.035));alb=mix(alb,vec3(1.,.6,.7),fc*step(length((c+vec2(.12,.04))*vec2(1.,1.6)),.035));
    alb=mix(alb,vec3(1.),edge);em=vec3(0.);}}
- else if(mat<4.5){alb=vec3(.1,.105,.12);spec=.7;gl=30.;float pk=floor((zz+7.)/28.);em+=neo(pk*.29)*edge*2.2*LG;if(TY){alb=qy>1.25?vec3(.32,.22,.3):vec3(1.,.42,.36);em=alb*.25*step(qy,1.25);spec=.3;}if(TT){alb=vec3(.38,.4,.44);em=vec3(1.,.15,.05)*edge*1.6*LG*(.6+.4*step(.5,fract(T*1.2+pk*.3)));}}
+ else if(mat<4.5){alb=vec3(.1,.105,.12);spec=.7;gl=30.;float pk=floor((zz+7.)/28.);em+=neo(pk*.29)*edge*2.2*LG;if(TY){alb=qy>1.25?vec3(.32,.22,.3):vec3(1.,.42,.36);em=alb*.25*step(qy,1.25);spec=.3;}}
  else if(mat<5.5){alb=vec3(.14,.13,.15);em+=neo(floor(zz/14.)*.31)*aal(abs(fract(qy*.7+T*.3)-.5),.04)*1.2*LG+neo(floor(zz/14.)*.31)*edge*.5*LG;if(TY){alb=vec3(.85,.8,.95);em*=.3;}}
  else if(mat<6.5){ // Röhre: dunkel, bunte Ringe, Deckenband, Seitenbänder mit Lauflicht
   alb=vec3(.06,.055,.08);float ang=vu.x;float f=fwidth(zz*.7);float ring=aal(abs(fract(zz*.7+.5)-.5),.03);ring=mix(ring,.06,clamp(f*1.5,0.,1.));
   em+=mix(CY,MG,step(.8,fract(floor(zz*.7+.5)*.37)))*ring*1.4*LG+vec3(.85,.9,1.)*aal(abs(ang),.025)*.5*LG;
   em+=(ang>0.?MG:CY)*aal(abs(abs(ang)-1.25),.016)*(.3+.9*exp(-pow(fract(zz*.05-T*1.2)-.5,2.)*60.))*LG;spec=.5;gl=25.;
   if(TY){alb=mix(vec3(1.,.68,.82),vec3(1.),aal(abs(fract(zz*.35)-.5),.08));em=em*.35+alb*.4;}
-  if(TT){float rk=noise(vec2(ang*7.,zz*.9))*.6+noise(vec2(ang*23.,zz*3.))*.4;alb=vec3(.3,.26,.23)*(.5+.8*rk);em=vec3(1.,.78,.4)*aal(abs(ang),.03)*1.3*LG+vec3(1.,.7,.35)*.05*(1.-abs(ang)*.5)+(ang>0.?MG:CY)*aal(abs(abs(ang)-1.25),.016)*.6*LG;spec=.15;gl=10.;}
+  if(TT){vec2 hx=vec2(ang*9.,zz*1.6);vec2 hq=abs(fract(hx+vec2(.5*mod(floor(hx.y),2.),0.))-.5);float grid=aal(min(hq.x,hq.y),.03);float cs=noise(vec2(ang*4.+T*.6,zz*.5-T*.4))*noise(vec2(ang*7.-T*.3,zz*.8+T*.2));
+   alb=vec3(.01,.025,.04);em=CY*(grid*.22+ring*1.1)*LG+vec3(0.,.12,.16)*cs*1.2*LG+vec3(.6,.9,1.)*aal(abs(ang),.02)*.5*LG+MG*aal(abs(abs(ang)-1.25),.016)*(.4+.9*exp(-pow(fract(zz*.05-T*1.2)-.5,2.)*60.))*LG;spec=1.;gl=80.;}   // gläserne Röhre: Wabengitter, Ringe, Lichtspiel
   if(dk>.001){float inner=step(length(vec2(qx,qy-.4)),TW+.2);alb=mix(alb,vec3(.004),dk);spec*=1.-dk;em=mix(em,graffiti(ang,zz)*inner*LG,dk);}}
  else if(mat<7.5){vec2 cq=floor(vec2(qx*5.,qy*6.));float ck=mod(cq.x+cq.y,2.);alb=vec3(ck*.9+.05);em+=vec3(ck)*.55*LG+vec3(1.)*edge*.8*LG;}
  else if(mat<8.5){ // Sperre: rot-weiß, Warnlicht oben – unverwechselbar
@@ -582,7 +582,7 @@ void main(){bool TT=TH>1.5,TY=TH>.5&&!TT;CY=TY?vec3(.5,.85,1.):TT?vec3(.4,.85,1.
  if(TY){sunC=vec3(1.15,1.06,1.);ambC=vec3(.66,.62,.74);c2=vec3(.5,.55,.7);env=vec3(.95,.88,.96)*.35;}
  vec3 col=alb*(sunC*dif*.9*ao+c2*dif2*.75*ao+ambC*(.5+.5*n.y)*ao+dL*ao)+(sunC*sp+c2*sp2*.8)*ao+sL+env*(refl+fr*.5*spec)+em;
  if(TY){col=(col*(2.51*col+.03))/(col*(2.43*col+.59)+.14);col=mix(FOGC,clamp(col*1.08,0.,1.),exp(-t*.0055));gl_FragColor=vec4(col,1.);return;}
- vec3 fc=mix(vec3(.012,.013,.024),vec3(.003,.0035,.007),smoothstep(-.05,.3,rd.y))*(1.-dk);if(TT)fc=FOGC;float fog=exp(-t*(TT?.009:.011));col=mix(fc,col,fog);
+ vec3 fc=mix(vec3(.012,.013,.024),vec3(.003,.0035,.007),smoothstep(-.05,.3,rd.y))*(1.-dk);if(TT)fc=FOGC;float fog=exp(-t*(TT?.016:.011));col=mix(fc,col,fog);
  col=(col*(2.51*col+.03))/(col*(2.43*col+.59)+.14);gl_FragColor=vec4(pow(clamp(col,0.,1.),vec3(.95)),1.);}`;
 // Leuchteffekte als Lichtpunkte und Lichtbänder (immer zur Kamera gedreht), addiert, vom Tiefenpuffer verdeckt
 const AG_FVS=`precision highp float;attribute vec3 a0,a1;attribute vec4 a2,a3;uniform vec3 RO,CF,CR,CU;uniform float FOV,A;varying vec2 vu;varying vec4 vc;varying float vty;
@@ -602,7 +602,7 @@ function agMkProg(gl,vs,fs,attrs){const c=(t,src)=>{const s=gl.createShader(t);g
 function agFrame(z){const T=AGT_,{nz,cr,ad,mu}=agV;const c=[T.px(z),T.py(z)+T.rmp(z),z],b=T.bk(z),fw=nz([T.dpx(z),T.dpy(z),1]),rt0=nz(cr([0,1,0],fw)),up0=cr(fw,rt0);
   return {c,fw,rr:ad(mu(rt0,Math.cos(b)),mu(up0,Math.sin(b))),uu:ad(mu(up0,Math.cos(b)),mu(rt0,-Math.sin(b)))};}
 function agTrackBuild(gl){const TW=AGT_.tw,{ad,mu}=agV,chunks=[];
-  const inTun=z=>{const t=z%350;return t>=158&&t<=247;};
+  const inTun=z=>agInTun(agLz(z),2);
   for(let ci=0;ci<7;ci++){const Z0=20+ci*100,Z1=Z0+100;const V=[],I=[];let nv=0;
     const vx=(P,N,qx,qy,m,u,w)=>{V.push(P[0],P[1],P[2],N[0],N[1],N[2],qx,qy,m,u,w);return nv++;};
     const quad=(a,b,c,d)=>{I.push(a,b,c,a,c,d);};
@@ -624,7 +624,7 @@ function agTrackBuild(gl){const TW=AGT_.tw,{ad,mu}=agV,chunks=[];
       face(mu(F.rr,-1),(a,b)=>[-hx,b*hy,-a*hz]);face(F.rr,(a,b)=>[hx,b*hy,a*hz]);face(F.uu,(a,b)=>[a*hx,hy,b*hz]);if(!noBottom)face(mu(F.uu,-1),(a,b)=>[a*hx,-hy,-b*hz]);
       face(mu(F.fw,-1),(a,b)=>[-a*hx,b*hy,-hz]);face(F.fw,(a,b)=>[a*hx,b*hy,hz]);};
     // Tunnel: Röhre innen und außen, Stirnringe
-    for(const [zs,ze] of [[160,245],[510,595]]){if(ze<Z0||zs>Z1)continue;const a0=Math.max(zs,Z0),a1=Math.min(ze,Z1);const R=TW+.25,NA=22,AM=Math.acos(Math.max(-1,-.56/R));let pr=null;
+    for(const [zs,ze] of AG_TUN){if(ze<Z0||zs>Z1)continue;const a0=Math.max(zs,Z0),a1=Math.min(ze,Z1);const R=TW+.25,NA=22,AM=Math.acos(Math.max(-1,-.56/R));let pr=null;
       for(let z=a0;z<=a1+1e-6;z+=1){const F=agFrame(z);const ring=[];for(let k=0;k<=NA;k++){const ph=-AM+2*AM*k/NA,sx=Math.sin(ph),cy=Math.cos(ph);
           const nIn=ad(mu(F.rr,-sx),mu(F.uu,-cy)),nOut=mu(nIn,-1);ring.push([vx(at(F,(R-.08)*sx,.4+(R-.08)*cy),nIn,(R-.08)*sx,.4+(R-.08)*cy,6,ph,0),vx(at(F,(R+.08)*sx,.4+(R+.08)*cy),nOut,(R+.08)*sx,.4+(R+.08)*cy,6,ph,0)]);}
         if(pr)for(let k=0;k<NA;k++){quad(pr[k][0],ring[k][0],ring[k+1][0],pr[k+1][0]);quad(pr[k][1],pr[k+1][1],ring[k+1][1],ring[k][1]);}
@@ -682,6 +682,9 @@ function agFxBuild(v,g,P,TT){const T=v.agT,out=T.fx,{ad,mu,nz}=agV;let n=0;const
     const bb=Math.min(1,b),len=(.4+.5*bb)*fl,E=ad(O,mu(s.SF,-len)),E2=ad(O,mu(s.SF,-len*1.7));
     Q(O,E,.045+.012*bb,4,bb>.3?[.75,.95,1]:[.8,.7,1],1.3+.7*bb);Q(O,E2,.11+.03*bb,4,bb>.3?[.2,.7,1]:[.45,.25,1],.4+.3*bb);spr(O,.18+.05*bb,[.6,.45,1],.8+.5*bb);
     light(ad(O,mu(s.SUp,-.02),mu(s.SF,-.25)),mu(b>.3?[.3,.75,1]:[.55,.35,1],.9+1.6*b),2.2,s.me?9:2);}
+  // Tiefsee: Leuchtplankton neben und über der Strecke – glimmt schwach, blitzt türkis auf, wenn du vorbeiziehst
+  if(AG_TRK===2){const zz=g.z+2.6;for(let k=Math.floor((zz-6)/1.6);k*1.6<zz+40;k++){const zc=k*1.6,a=hs(k,41)*6.283,r=AGT_.tw+.6+hs(k,42)*2.2,pp=agWorld(zc,Math.cos(a)*r,1+Math.sin(a)*r*.7);
+      const d=zc-zz,I=.12+1.6*Math.exp(-d*d/10)*(d<1.5?1:.3);spr(pp,.07+.05*I,hs(k,43)<.7?[.2,1,.9]:[.5,.5,1],I*(.8+.4*Math.sin(now*.003+k)));}}
   // Raketen mit Leuchtspur, Minen, Explosionen mit Blitzen und Funken
   for(const s of g.shots||[]){const p=agWorld(s.z,s.lat,.22);spr(p,.2,[1,.95,.8],3.2);spr(p,.7,[1,.45,.15],.7);
     const hst=s.hist||[[s.z-2.4,s.lat],[s.z-1.2,s.lat]];let pp=p;for(let i=hst.length-1;i>=0;i--){const q=agWorld(hst[i][0],hst[i][1],.22),f=1-(hst.length-1-i)/hst.length;Q(pp,q,.035,3,[1,.95,.85],2.2*f);Q(pp,q,.09,3,[1,.5,.15],1.4*f);Q(pp,q,.3,3,[1,.25,.05],.22*f);pp=q;}
@@ -712,7 +715,7 @@ function agFxBuild(v,g,P,TT){const T=v.agT,out=T.fx,{ad,mu,nz}=agV;let n=0;const
   // Sperren: blinkendes Warnlicht, schon von Weitem zu sehen
   {const zz=g.z+2.6;for(let k=Math.ceil((zz-10-25)/50);k*50+25<zz+150;k++){if(!AGT_.obOk(k))continue;const zc=k*50+25,p=agWorld(zc,AGT_.obx(k),.75),bl=.6+.4*Math.sin(now*.009+k);spr(p,.18,[1,.15,.1],2.2*bl);spr(p,.9,[1,.05,.03],.35*bl);}}
   // Portale: Lichtschein unter dem Träger
-  {const zz=g.z+2.6;for(let k=Math.ceil((zz-10-7)/28);k*28+7<zz+120;k++){const zc=k*28+7;const t=agLz(zc)%350;if(t>=158&&t<=247)continue;const c=AG_NEO(k*.29+.5);Q(agWorld(zc,-AGT_.tw,1.22),agWorld(zc,AGT_.tw,1.22),.22,3,c,.35);}}
+  {const zz=g.z+2.6;for(let k=Math.ceil((zz-10-7)/28);k*28+7<zz+120;k++){const zc=k*28+7;if(agInTun(agLz(zc),2))continue;const c=AG_NEO(k*.29+.5);Q(agWorld(zc,-AGT_.tw,1.22),agWorld(zc,AGT_.tw,1.22),.22,3,c,.35);}}
   L.sort((x,y)=>y.pri-x.pri);const LP=new Float32Array(32),LC=new Float32Array(32);L.slice(0,8).forEach((l,i)=>{LP.set([l.p[0],l.p[1],l.p[2],1],i*4);LC.set([l.c[0],l.c[1],l.c[2],l.k],i*4);});
   return {n,LP,LC};}
 function vizAgScene(v,tgt,val,P){const gl=v.gl,T=agTrack(v);if(!T)return;const g=v.agg;if(!g)return;
@@ -721,7 +724,7 @@ function vizAgScene(v,tgt,val,P){const gl=v.gl,T=agTrack(v);if(!T)return;const g
   gl.useProgram(T.tp.pg);set3(u,'RO',P.ro);set3(u,'CF',P.cf);set3(u,'CR',P.cr);set3(u,'CU',P.cu);gl.uniform1f(u.FOV,P.fov);gl.uniform1f(u.A,A);
   const sn=[-.4,.07,1],sl=Math.hypot(...sn);gl.uniform3f(u.SUN,sn[0]/sl,sn[1]/sl,sn[2]/sl);set3(u,'S0',P.S0);set3(u,'SF',P.SF);set3(u,'SR',P.SR);
   gl.uniform1f(u.T,(performance.now()/1000)%3600);gl.uniform1f(u.NT,val.sky??1);gl.uniform1f(u.TW,AGT_.tw);gl.uniform1f(u.PC,AGT_.pc);gl.uniform1f(u.LG,val.glow??1);gl.uniform1f(u.BO,g.boost||0);
-  gl.uniform1f(u.RZ,g.z+2.6);gl.uniform1f(u.TH,AG_TRK);gl.uniform3f(u.FOGC,...(AG_TRK===2?[.16,.1,.15]:AG_FOGC));{const sg=new Float32Array(24);AG_SEG.forEach((q,i)=>sg.set(q,i*3));gl.uniform3fv(u['SG[0]'],sg);}gl.uniform1f(u.QZ,g.quake?g.quake.z:-1e3);gl.uniform1f(u.QS,g.quake?Math.max(0,1-(g.quake.age||0)/6):0);
+  gl.uniform1f(u.RZ,g.z+2.6);gl.uniform1f(u.TH,AG_TRK);gl.uniform3f(u.FOGC,...(AG_TRK===2?[0,.02,.035]:AG_FOGC));{const sg=new Float32Array(24);AG_SEG.forEach((q,i)=>sg.set(q,i*3));gl.uniform3fv(u['SG[0]'],sg);}gl.uniform1f(u.QZ,g.quake?g.quake.z:-1e3);gl.uniform1f(u.QS,g.quake?Math.max(0,1-(g.quake.age||0)/6):0);
   gl.uniform4fv(u['LP[0]'],FX.LP);gl.uniform4fv(u['LC[0]'],FX.LC);gl.uniform4fv(u['AGD[0]'],vizAgD(g));
   gl.disable(gl.CULL_FACE);gl.enable(gl.DEPTH_TEST);gl.depthMask(true);gl.disable(gl.BLEND);
   for(let i=0;i<4;i++)gl.enableVertexAttribArray(i);
@@ -746,21 +749,21 @@ const AG_FOGC=[.98,.88,.9];
 const AG_PC={pk:[1,.62,.76],mt:[.55,.9,.76],lv:[.72,.64,.98],bt:[1,.88,.55],sk:[.58,.78,1],cr:[1,.96,.9],pe:[1,.8,.68],dk:[.22,.16,.2],bl:[1,.55,.66],wd:[.72,.55,.5],sa:[1,.78,.86],sw:[1,.88,.93]};
 const AG_TVS2=`precision highp float;attribute vec3 p,nn;uniform mat4 M;uniform vec3 SCL;uniform vec3 RO,CF,CR,CU;uniform float FOV,A;varying vec3 vw,vn;
 void main(){vec4 w=M*vec4(p,1.);vw=w.xyz;vn=mat3(M)*(nn/(SCL*SCL));vec3 v=w.xyz-RO;float z=dot(v,CF);const float n=.1,f=220.;gl_Position=vec4(dot(v,CR)*FOV*2./A,dot(v,CU)*FOV*2.,(f+n)/(f-n)*z-2.*f*n/(f-n),z);}`;
-const AG_TFS2=`precision highp float;varying vec3 vw,vn;uniform vec3 RO,COL,FOGC;uniform float GRD,RIM,DOT;
+const AG_TFS2=`precision highp float;varying vec3 vw,vn;uniform vec3 RO,COL,FOGC,EMI;uniform float GRD,RIM,DOT;
 void main(){vec3 n=normalize(vn);vec3 rd=normalize(vw-RO);if(dot(n,rd)>0.)n=-n;vec3 L=normalize(vec3(.35,.7,.6));
  float d=dot(n,L)*.5+.5;float toon=.68+.32*smoothstep(.38,.5,d);float rim=pow(1.-max(0.,dot(n,-rd)),3.);vec3 c=COL;
  if(GRD>.5){vec2 q=vw.xz*.09;c=mix(c,vec3(1.,.8,.88),smoothstep(.16,.12,length(fract(q+vec2(.5*floor(q.y),0.))-.5))*.7*DOT);toon=1.;rim=0.;}
  vec3 col=c*toon+vec3(1.,.97,1.)*rim*RIM+vec3(1.)*pow(max(0.,dot(reflect(rd,n),L)),20.)*.25*(1.-GRD);
- col=mix(FOGC,col,exp(-length(vw-RO)*(GRD>.5?.009:.0042)));gl_FragColor=vec4(clamp(col,0.,1.),1.);}`;
+ col=mix(FOGC,col,exp(-length(vw-RO)*(GRD>.5?.009:.0042)));col+=EMI*exp(-length(vw-RO)*.006);gl_FragColor=vec4(clamp(col,0.,1.),1.);}`;
 // Figuren aus Kugeln: [x,y,z, Radius x,y,z, Farbe]; y = Höhe über dem Boden, +z schaut zur Strecke
 function agToyParts(type,c){const P=AG_PC,C=c;switch(type){
   case 0:return [[0,1.5,0,1.5,1.5,1.3,C],[0,3.6,0,1.25,1.1,1.1,C],[.85,4.5,0,.42,.42,.3,C],[-.85,4.5,0,.42,.42,.3,C],[0,3.35,1,.5,.36,.3,P.cr],[0,3.52,1.28,.13,.1,.08,P.dk],
     [.42,3.85,.98,.11,.14,.06,P.dk],[-.42,3.85,.98,.11,.14,.06,P.dk],[.75,3.4,.86,.24,.13,.06,P.bl],[-.75,3.4,.86,.24,.13,.06,P.bl],[1.35,1.9,.3,.45,.7,.45,C],[-1.35,1.9,.3,.45,.7,.45,C],[.7,.25,.6,.5,.3,.6,C],[-.7,.25,.6,.5,.3,.6,C]];   // Mochi-Bär
   case 1:return [[0,3.3,0,.09,3.3,.09,P.wd],[0,1.5,0,1,.95,1,P.sa],[0,3.3,0,1,.95,1,P.sw],[0,5.1,0,1,.95,1,P.mt]];   // Hanami-Dango
   case 2:return [[0,2.6,0,.42,2.6,.42,P.wd],[0,5.6,0,2.3,1.7,2.3,P.pk],[1.7,5,.3,1.5,1.2,1.5,P.sa],[-1.6,5.1,-.2,1.5,1.2,1.5,P.sw],[.2,6.7,-.5,1.6,1.2,1.6,P.sa],[-.6,6.3,1.1,1.2,1,1.2,P.pk]];   // Kirschbaum
-  case 10:return [[0,2,0,.5,2.2,.5,[.25,.17,.12]],[0,4.6,0,2.6,1.6,2.6,[.07,.2,.12]],[0,6.6,0,2.1,1.4,2.1,[.09,.24,.14]],[0,8.4,0,1.6,1.2,1.6,[.07,.2,.12]],[0,9.9,0,1,1.1,1,[.1,.26,.15]]];   // Tanne
-  case 11:return [[0,3,0,5,4,4,[.36,.31,.28]],[4.2,2,1,3,2.6,3,[.3,.27,.25]],[-3.6,1.6,-1,3.6,2.2,3,[.4,.35,.31]],[1,5.6,-1,2.4,2,2.2,[.33,.29,.27]]];   // Felsen
-  case 12:{const r=[];for(let i=0;i<6;i++)r.push([0,1.6+i*3,0,.45,1.5,.45,i%2?[.95,.95,.95]:[.85,.12,.1]]);r.push([0,19.4,0,.35,.35,.35,[1,.25,.15]]);return r;}   // Funkmast
+  case 20:{const g=c,r=[[0,0,0,1.4,1,1.4,[.04,.06,.12],g.map(x=>x*.45)],[0,-.15,0,1,.55,1,[.02,.03,.06],g.map(x=>x*1.1)]];for(let i=0;i<6;i++){const a=i*1.047;r.push([Math.cos(a)*.75,-2.3,Math.sin(a)*.75,.06,2.1,.06,[.02,.03,.05],g.map(x=>x*.7)]);}return r;}   // Qualle
+  case 21:{const d=[.05,.045,.07];return [[0,3,0,.8,3,.8,d],[.9,2,0,.5,2,.5,d],[-.7,2.5,.3,.45,2.5,.45,d],[0,6.1,0,.36,.36,.36,d,[1,.3,.7]],[.9,4.1,0,.28,.28,.28,d,[0,1,.9]],[-.7,5.1,.3,.28,.28,.28,d,[.5,.4,1]]];}   // Koralle mit Leuchtspitzen
+  case 22:{const d=[.045,.05,.06];return [[0,0,0,1.6,1.3,2,d],[0,-.6,1.4,1.2,.5,.8,[.03,.03,.04]],[.7,.4,1.45,.18,.18,.12,d,[.4,.6,.5]],[-.7,.4,1.45,.18,.18,.12,d,[.4,.6,.5]],[0,1.5,1.6,.05,.9,.05,d],[0,2.4,2.3,.25,.25,.25,d,[2,1.7,.7]]];}   // Anglerfisch
   case 3:return [[0,1.6,0,1,1.6,1,C],[0,3.7,0,.95,.95,.95,P.cr],[0,4.05,-.25,1.02,.85,1,P.dk],[.32,3.72,.88,.1,.04,.04,P.dk],[-.32,3.72,.88,.1,.04,.04,P.dk],[.55,3.5,.75,.2,.11,.06,P.bl],[-.55,3.5,.75,.2,.11,.06,P.bl],[0,1.9,.97,.36,.36,.08,P.sw],[0,1.9,1.02,.13,.13,.05,P.bt]];   // Kokeshi
   default:return [[0,1.25,0,1.25,1.25,1.25,C],[1.9,.85,.7,.85,.85,.85,P.bt],[-1.5,1,-.6,1,1,1,P.sk],[.4,2.9,0,.7,.7,.7,P.mt]];}}   // Spielbälle
 function agToyRes(v){const gl=v.gl;if(v.toy)return v.toy;
@@ -771,19 +774,20 @@ function agToyRes(v){const gl=v.gl;if(v.toy)return v.toy;
     const ib=gl.createBuffer();gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,ib);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(I),gl.STATIC_DRAW);v.toy={pr,vb,ib,ni:I.length};}
   catch(e){dl('Spielzeug: '+e.message);v.toy={bad:true};}return v.toy;}
 function agToyDraw(v,P){if(!AG_TRK)return;const TC=AG_TRK===2;const K=agToyRes(v);if(K.bad)return;const gl=v.gl,u=K.pr.u,{nz,cr,mu,ad}=agV,T=performance.now()/1000;
-  gl.useProgram(K.pr.pg);const s3=(k,x)=>gl.uniform3f(u[k],x[0],x[1],x[2]);s3('RO',P.ro);s3('CF',P.cf);s3('CR',P.cr);s3('CU',P.cu);s3('FOGC',TC?[.3,.2,.28]:AG_FOGC);gl.uniform1f(u.RIM,TC?.06:.22);gl.uniform1f(u.FOV,P.fov);gl.uniform1f(u.A,innerWidth/innerHeight);
+  gl.useProgram(K.pr.pg);const s3=(k,x)=>gl.uniform3f(u[k],x[0],x[1],x[2]);s3('RO',P.ro);s3('CF',P.cf);s3('CR',P.cr);s3('CU',P.cu);s3('FOGC',TC?[0,.02,.035]:AG_FOGC);gl.uniform1f(u.RIM,TC?.06:.22);gl.uniform1f(u.FOV,P.fov);gl.uniform1f(u.A,innerWidth/innerHeight);
   gl.bindBuffer(gl.ARRAY_BUFFER,K.vb);gl.enableVertexAttribArray(0);gl.enableVertexAttribArray(1);gl.vertexAttribPointer(0,3,gl.FLOAT,false,24,0);gl.vertexAttribPointer(1,3,gl.FLOAT,false,24,12);gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,K.ib);
   gl.enable(gl.DEPTH_TEST);gl.depthMask(true);gl.disable(gl.BLEND);const M=new Float32Array(16);
-  const ell=(C,X,Y,Z,h,col)=>{M.set([X[0]*h[0],X[1]*h[0],X[2]*h[0],0,Y[0]*h[1],Y[1]*h[1],Y[2]*h[1],0,Z[0]*h[2],Z[1]*h[2],Z[2]*h[2],0,C[0],C[1],C[2],1]);gl.uniformMatrix4fv(u.M,false,M);s3('SCL',h);s3('COL',col);gl.drawElements(gl.TRIANGLES,K.ni,gl.UNSIGNED_SHORT,0);};
-  const GY=TC?-13:-6.2,X0=[1,0,0],Y0=[0,1,0],Z0=[0,0,1];
+  const ell=(C,X,Y,Z,h,col,em)=>{s3('EMI',em||[0,0,0]);M.set([X[0]*h[0],X[1]*h[0],X[2]*h[0],0,Y[0]*h[1],Y[1]*h[1],Y[2]*h[1],0,Z[0]*h[2],Z[1]*h[2],Z[2]*h[2],0,C[0],C[1],C[2],1]);gl.uniformMatrix4fv(u.M,false,M);s3('SCL',h);s3('COL',col);gl.drawElements(gl.TRIANGLES,K.ni,gl.UNSIGNED_SHORT,0);};
+  const GY=TC?-11:-6.2,X0=[1,0,0],Y0=[0,1,0],Z0=[0,0,1];
   // Boden: weite Wiese in Mint mit rosa Blütentupfen
-  gl.uniform1f(u.GRD,1);gl.uniform1f(u.DOT,TC?0:1);ell([P.ro[0],GY,P.ro[2]+60],X0,Y0,Z0,[420,.02,420],TC?[.1,.14,.1]:[.8,.94,.86]);gl.uniform1f(u.GRD,0);
+  gl.uniform1f(u.GRD,1);gl.uniform1f(u.DOT,TC?0:1);ell([P.ro[0],GY,P.ro[2]+60],X0,Y0,Z0,[420,.02,420],TC?[.03,.045,.055]:[.8,.94,.86]);gl.uniform1f(u.GRD,0);
   const hs=(a,b)=>{const x=Math.sin(a*127.1+b*311.7)*43758.5453;return x-Math.floor(x);},cz=P.ro[2],cols=[AG_PC.pk,AG_PC.mt,AG_PC.lv,AG_PC.bt,AG_PC.sk,AG_PC.pe];
-  const SP=TC?8:13;for(let k=Math.floor((cz-30)/SP);k*SP<cz+190;k++){const zc=k*SP+6;const sd=hs(k,1)<.5?-1:1,hr=hs(k,2),ty=TC?(hr<.5?10:hr<.92?11:12):Math.floor(hr*5),sc=TC?(ty===10?1.5+hs(k,3):ty===11?1.2+hs(k,3)*1.4:1.1):2+hs(k,3)*1.3,lat=sd*(AGT_.tw+(TC?(ty===11?7:3.5):2.6)+hs(k,4)*(TC?9:4.5));
-    const F=agFrame(zc),R=nz([F.rr[0],0,F.rr[2]]),B=[F.c[0]+R[0]*lat,GY,F.c[2]+R[2]*lat];let Zf=mu(R,-sd);const tw=(hs(k,6)-.5)*.9;Zf=nz(ad(mu(Zf,Math.cos(tw)),mu(cr(Y0,Zf),Math.sin(tw))));const Xf=cr(Y0,Zf);
+  const SP=TC?10:13,JC=[[1,.3,.75],[0,.95,.9],[.45,.45,1],[.3,1,.5]];for(let k=Math.floor((cz-30)/SP);k*SP<cz+190;k++){const zc=k*SP+6;const sd=hs(k,1)<.5?-1:1,hr=hs(k,2),ty=TC?(hr<.45?20:hr<.8?21:22):Math.floor(hr*5),sc=TC?(ty===21?1.4+hs(k,3):.9+hs(k,3)*.8):2+hs(k,3)*1.3,lat=sd*(AGT_.tw+(TC?3:2.6)+hs(k,4)*(TC?9:4.5));
+    const F=agFrame(zc),R=nz([F.rr[0],0,F.rr[2]]),B=[F.c[0]+R[0]*lat,TC&&ty!==21?F.c[1]-1+hs(k,7)*8+Math.sin(T*.7+k)*.6:GY,F.c[2]+R[2]*lat];let Zf=mu(R,-sd);const tw=(hs(k,6)-.5)*.9;Zf=nz(ad(mu(Zf,Math.cos(tw)),mu(cr(Y0,Zf),Math.sin(tw))));const Xf=cr(Y0,Zf);
     const bob=ty===4?0:Math.sin(T*1.6+k)*.06;   // leichtes Wippen
-    for(const q of agToyParts(ty,cols[Math.floor(hs(k,5)*cols.length)]))ell(ad(B,mu(Xf,q[0]*sc),mu(Y0,(q[1]+bob*q[1])*sc),mu(Zf,q[2]*sc)),Xf,Y0,Zf,[q[3]*sc,q[4]*sc,q[5]*sc],q[6]);}
+    const pl=TC?.75+.25*Math.sin(T*2+k*1.7):1;for(const q of agToyParts(ty,TC?JC[Math.floor(hs(k,5)*4)]:cols[Math.floor(hs(k,5)*cols.length)]))ell(ad(B,mu(Xf,q[0]*sc),mu(Y0,(q[1]+bob*q[1])*sc),mu(Zf,q[2]*sc)),Xf,Y0,Zf,[q[3]*sc,q[4]*sc,q[5]*sc],q[6],q[7]&&q[7].map(x=>x*pl));}
   // Kirschblüten: schweben um die Kamera, trudeln langsam herab
+  if(TC)for(let j=0;j<40;j++){const ph=(T*(.03+.02*hs(j,7))+hs(j,8))%1,fw=agFrame(cz+20);const pos=ad(P.ro,mu(fw.fw,24-ph*30),[(hs(j,9)-.5)*12,4-ph*7+(hs(j,10)-.5)*3,0]);ell(pos,X0,Y0,Z0,[.03,.03,.03],[0,0,0],[.35,.6,.65]);}   // Meeresschnee
   if(!TC)for(let j=0;j<46;j++){const ph=(T*(.08+.05*hs(j,7))+hs(j,8))%1,fw=agFrame(cz+20);const pos=ad(P.ro,mu(fw.fw,26-ph*34),[(hs(j,9)-.5)*14+Math.sin(T*.7+j)*.6,3.5-ph*6+(hs(j,10)-.5)*2,0]);
     const a=T*(1.5+hs(j,11)*2)+j,X=[Math.cos(a),Math.sin(a)*.5,Math.sin(a)*.6],Yp=nz(cr(X,[0,0,1])),Zp=cr(X,Yp);ell(pos,X,Yp,Zp,[.09,.02,.065],hs(j,12)<.5?AG_PC.pk:AG_PC.sw);}
   gl.disableVertexAttribArray(1);}
@@ -798,7 +802,7 @@ function vizShipDraw(v,tgt,val){const gl=v.gl;let SP=null;try{SP=vizShipProg(v);
   gl.uniform1f(u.FOV,P.fov);gl.uniform1f(u.A,innerWidth/innerHeight);gl.uniform1f(u.JET,.4+.9*P.B+1.8*P.boost);gl.uniform1f(u.NT,val.sky??0);gl.uniform1f(u.BO,P.boost);gl.uniform1f(u.BB,0);
   gl.uniform1i(u.TB,0);gl.uniform1i(u.TM,1);gl.uniform1i(u.TE,2);
   gl.enableVertexAttribArray(0);gl.enableVertexAttribArray(1);gl.enableVertexAttribArray(2);
-  const agTn=z=>{const t=agLz(z)%350;return t>=159&&t<=246;};const g=v.agg,T=(performance.now()/1000)%3600,ships=g&&g.cam&&(g.cam.hide||(g.cam.top&&agTn(g.z+2.6)))?[]:[{sm:g?g.sm:agShipIx(AG_SET.ship),S0:P.S0,SR:P.SR,SUp:P.SUp,SF:P.SF,tint:[1,1,1],jet:.4+.9*P.B+1.8*P.boost,sh:g&&g.shield>0}];
+  const agTn=z=>agInTun(agLz(z),1);const g=v.agg,T=(performance.now()/1000)%3600,ships=g&&g.cam&&(g.cam.hide||(g.cam.top&&agTn(g.z+2.6)))?[]:[{sm:g?g.sm:agShipIx(AG_SET.ship),S0:P.S0,SR:P.SR,SUp:P.SUp,SF:P.SF,tint:[1,1,1],jet:.4+.9*P.B+1.8*P.boost,sh:g&&g.shield>0}];
   if(g)for(const o of g.opp){const d=o.z-g.z;if(d<(g.rep?-30:-6)||d>70)continue;if(g.cam&&g.cam.top&&agTn(o.z+2.6))continue;const q=agPoseOf(o.z+2.6,o.lat,o.roll+(o.spin>0?o.spin*9:0),.16+.012*Math.sin(T*2.7+o.ai)+o.h,o.psi);ships.push({sm:o.sm,S0:q.S0,SR:q.SR,SUp:q.SUp,SF:q.SF,tint:[1,1,1],jet:.5+1.6*o.boost});}   // jeder Gegner mit eigenem Gleiter in Originalfarben
   // Geist: deine Bestzeit fährt als durchsichtiger Gleiter mit
   {const G=g&&!g.rep&&v.state==='game'&&(AG_SET.ghost!==0||g.solo)&&g.ghT>0?v.ghost:null;if(G){const f=G.f,n=f.length/6,t=g.ghT;let lo=0,hi=n-1;if(n>1&&t<=f[(n-1)*6]){while(hi-lo>1){const m=(lo+hi)>>1;if(f[m*6]<=t)lo=m;else hi=m;}
@@ -818,6 +822,8 @@ function vizShipDraw(v,tgt,val){const gl=v.gl;let SP=null;try{SP=vizShipProg(v);
 // =====================================================================================================
 // AntiGrav – eigene App. Ab hier: Grundgerüst (Bildschleife, Himmel, Nachbearbeitung, Menü, Einstellungen, Updates)
 // =====================================================================================================
+// einmalig (29.10.): alte Ranglisten, Bestzeiten und Geister löschen, damit der Geist ab jetzt sauber entsteht
+try{if(!localStorage.getItem('ag_reset1')){Object.keys(localStorage).filter(k=>/^(vz_ag_hs|vz_ag_best3|vz_ag_blap|ag_ghost)/.test(k)).forEach(k=>localStorage.removeItem(k));localStorage.setItem('ag_reset1','1');}}catch{}
 const AG_SET_DEF={trk:0,ship:0,ghost:1,ctrl:0,speed:1,curvy:1,width:1,steer:1,bank:1,glow:1,sky:1};
 // Spannweiten wie in VIZ (dort waren die Regler weiter als angegeben), Tempo bis zum Vierfachen
 const AG_SET_L=[['speed','Speed',.3,10,.05],['curvy','Curviness',.2,2.8,.01],['width','Track width',.6,2.1,.01],['bank','Banking',0,3.2,.01],['glow','Track lighting',0,3.2,.01],['sky','Dusk ↔ Night',0,1,.01],['steer','Opponents: steering accuracy',.3,3.2,.01]];
@@ -856,7 +862,7 @@ function agFbo(w,h){const t=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,t);g
 function agSize(res){const dpr=Math.min(devicePixelRatio||1,2);const cw=Math.round(innerWidth*dpr*.9),ch=Math.round(innerHeight*dpr*.9);if(cv.width!==cw||cv.height!==ch){cv.width=cw;cv.height=ch;}
   const sw=Math.round(innerWidth*dpr*res),sh=Math.round(innerHeight*dpr*res);
   if(!v.scene||v.scene.w!==sw||v.scene.h!==sh){if(v.scene){gl.deleteTexture(v.scene.t);gl.deleteFramebuffer(v.scene.f);if(v.scene.db)gl.deleteRenderbuffer(v.scene.db);}v.scene=agFbo(sw,sh);}}
-const agVal=()=>AG_TRK===1?Object.assign({},AG_SET,{sky:0,glow:(AG_SET.glow??1)*.6}):AG_TRK===2?Object.assign({},AG_SET,{sky:.42,glow:(AG_SET.glow??1)*.8}):AG_SET;
+const agVal=()=>AG_TRK===1?Object.assign({},AG_SET,{sky:0,glow:(AG_SET.glow??1)*.6}):AG_TRK===2?Object.assign({},AG_SET,{sky:1,glow:(AG_SET.glow??1)*1.1}):AG_SET;
 function agQuadDraw(){gl.bindBuffer(gl.ARRAY_BUFFER,v.qbuf);gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,2,gl.FLOAT,false,0,0);gl.drawArrays(gl.TRIANGLE_STRIP,0,4);}
 
 // ---- Menü-Hintergrund: Kamera kreist langsam um den Gleiter am Start
@@ -884,7 +890,7 @@ function agFrame60(ts){requestAnimationFrame(agFrame60);if(!AG_SKYP)return;
   vizShipDraw(v,tgt,val);
   // aufs Display
   gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,cv.width,cv.height);gl.useProgram(AG_POSTP.pg);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tgt.t);
-  gl.uniform1i(AG_POSTP.u.S,0);gl.uniform1f(AG_POSTP.u.WRP,v.state==='game'?(g&&g.warp||0):0);gl.uniform1f(AG_POSTP.u.GLW,[1,.18,.7][AG_TRK]);agQuadDraw();}
+  gl.uniform1i(AG_POSTP.u.S,0);gl.uniform1f(AG_POSTP.u.WRP,v.state==='game'?(g&&g.warp||0):0);gl.uniform1f(AG_POSTP.u.GLW,[1,.18,1.25][AG_TRK]);agQuadDraw();}
 requestAnimationFrame(agFrame60);
 
 // ---- Spiel starten / beenden
@@ -915,7 +921,7 @@ function agDlg(title,html,btns){const d=$('dlg');d.innerHTML=`<div class="box"><
 // Gleiterwahl: Pfeile oder Wischen über den Menühintergrund; die Kamera kreist um den gewählten Gleiter
 function agShipUI(){const i=agShipIx(AG_SET.ship),S=AG_SHIPS[i];$('mshn').textContent=S.nm;$('mshi').textContent=(i+1)+' / '+AG_SHIPS.length;$('mcr').textContent='Ship: '+S.cr+' · private use only';}
 function agShipSet(d){AG_SET.ship=(agShipIx(AG_SET.ship)+d+AG_SHIPS.length)%AG_SHIPS.length;agSaveSet();if(v.agg&&v.state!=='game'){const b=v.agg.best,bl=v.agg.blap;v.agg=agNew();v.agg.best=b;v.agg.blap=bl;}agShipUI();agVib(8);}
-function agTrkUI(){$('mtkn').textContent=AG_TRACKS[AG_TRK].nm;document.body.classList.toggle('toy',AG_TRK===1);$('msub').textContent=['ANTIGRAVITY RACING AT NIGHT','ANTIGRAVITY RACING IN TOYLAND','ANTIGRAVITY RACING AT DUSK'][AG_TRK];}
+function agTrkUI(){$('mtkn').textContent=AG_TRACKS[AG_TRK].nm;document.body.classList.toggle('toy',AG_TRK===1);$('msub').textContent=['ANTIGRAVITY RACING AT NIGHT','ANTIGRAVITY RACING IN TOYLAND','ANTIGRAVITY RACING IN THE DEEP'][AG_TRK];}
 function agTrkSet(d){AG_SET.trk=(AG_TRK+d+AG_TRACKS.length)%AG_TRACKS.length;agSaveSet();agTrkApply(AG_SET.trk);if(v.state!=='game')v.agg=agNew();agMenuHS();agTrkUI();agVib(8);}
 $('mtkp').onclick=()=>agTrkSet(-1);$('mtkx').onclick=()=>agTrkSet(1);agTrkApply(AG_SET.trk);agTrkUI();
 $('mshp').onclick=()=>agShipSet(-1);$('mshx').onclick=()=>agShipSet(1);
