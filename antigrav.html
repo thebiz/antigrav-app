@@ -48,7 +48,7 @@ void main(){vec3 q=p;if(ISJ>.5&&q.z<-.62)q.z=-.62+(q.z+.62)*JET;
  vec3 w=S0-SR*q.x+SU*q.y+SF*q.z;vn=normalize(-SR*nn.x+SU*nn.y+SF*nn.z);vw=w;vt=tc;
  vec3 v=w-RO;float z=dot(v,CF);const float n=.1,f=220.;
  gl_Position=vec4(dot(v,CR)*FOV*2./A,dot(v,CU)*FOV*2.,(f+n)/(f-n)*z-2.*f*n/(f-n),z);}`;
-const VZ_SHIP_FS=`precision highp float;varying vec2 vt;varying vec3 vn,vw;uniform sampler2D TB,TM,TE;uniform float HM,HE,EMF,ALP,MET,ROU,ADD,NT,BO,BB,SHL;uniform vec3 RO,SUN,TINT;
+const VZ_SHIP_FS=`precision highp float;varying vec2 vt;varying vec3 vn,vw;uniform sampler2D TB,TM,TE;uniform float HM,HE,EMF,ALP,MET,ROU,ADD,NT,BO,BB,SHL,GH;uniform vec3 RO,SUN,TINT;
 vec3 skyc(vec3 d){float h=d.y;vec3 hor=mix(vec3(1.,.5,.26),vec3(.16,.12,.24),NT),top=mix(vec3(.12,.17,.36),vec3(.01,.015,.05),NT),mid=mix(vec3(.62,.32,.42),vec3(.05,.04,.1),NT);
  vec3 c=mix(hor,mid,smoothstep(.0,.12,h));c=mix(c,top,smoothstep(.1,.55,h));if(h<0.)c=mix(c,vec3(.06,.06,.08),smoothstep(0.,-.3,h));return c+vec3(1.,.7,.4)*pow(max(0.,dot(d,SUN)),20.)*(1.-NT);}
 void main(){vec4 tb=texture2D(TB,vt);vec3 alb=pow(tb.rgb,vec3(2.2));float lm=dot(alb,vec3(.3,.5,.2));alb=mix(alb,lm*TINT*1.5,step(.01,abs(TINT.x+TINT.y+TINT.z-3.))*.7);float met=MET,rou=ROU;
@@ -62,6 +62,7 @@ void main(){vec4 tb=texture2D(TB,vt);vec3 alb=pow(tb.rgb,vec3(2.2));float lm=dot
  if(HE>.5)col+=pow(texture2D(TE,vt).rgb,vec3(2.2))*EMF*(1.+1.2*BB+2.5*BO);
  if(ADD>.5){float k=.35+1.2*BB+1.7*BO;col=pow(tb.rgb,vec3(2.2))*tb.a*.6*k;if(HE>.5)col+=pow(texture2D(TE,vt).rgb,vec3(2.2))*.7*k;}
  col+=vec3(.3,.7,1.)*SHL*(.4+.4*fr);
+ if(GH>.5){float rim=pow(1.-max(0.,dot(n,-vd)),2.);gl_FragColor=vec4(vec3(.3,.75,1.)*(.12+.95*rim)+vec3(.5,.8,1.)*lm*.6,1.);return;}   // Geist: durchsichtig, leuchtende Kanten
  col=(col*(2.51*col+.03))/(col*(2.43*col+.59)+.14);col=pow(clamp(col,0.,1.),vec3(.95));
  gl_FragColor=vec4(col,ADD>.5?1.:tb.a*ALP);}`;
 // Alle Gleiter: gleiches Format, gleiche Länge (Nase vorn bei +z), eigene Düsenlage (eng = Höhe, z hinten)
@@ -76,7 +77,7 @@ function vizShipProg(v){const gl=v.gl;if(v.shipPg)return v.shipPg;
   const c=(t,src)=>{const s=gl.createShader(t);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));return s;};
   const pg=gl.createProgram();gl.attachShader(pg,c(gl.VERTEX_SHADER,VZ_SHIP_VS));gl.attachShader(pg,c(gl.FRAGMENT_SHADER,VZ_SHIP_FS));
   gl.bindAttribLocation(pg,0,'p');gl.bindAttribLocation(pg,1,'nn');gl.bindAttribLocation(pg,2,'tc');gl.linkProgram(pg);if(!gl.getProgramParameter(pg,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(pg));
-  const u={};['S0','SR','SU','SF','RO','CF','CR','CU','FOV','A','JET','ISJ','TB','TM','TE','HM','HE','EMF','ALP','MET','ROU','ADD','NT','BO','BB','SUN','TINT','SHL'].forEach(k=>u[k]=gl.getUniformLocation(pg,k));
+  const u={};['S0','SR','SU','SF','RO','CF','CR','CU','FOV','A','JET','ISJ','TB','TM','TE','HM','HE','EMF','ALP','MET','ROU','ADD','NT','BO','BB','SUN','TINT','SHL','GH'].forEach(k=>u[k]=gl.getUniformLocation(pg,k));
   return v.shipPg={pg,u};}
 function vizShipModel(v,i){const gl=v.gl;v.ships=v.ships||[];i=agShipIx(i);if(v.ships[i])return v.ships[i];const sh=v.ships[i]={ok:false,prims:[],mats:[],eng:[.155,-.74]};
   fetch('ship-'+AG_SHIPS[i].id+'.bin').then(r=>{if(!r.ok)throw 0;return r.arrayBuffer();}).then(async buf=>{
@@ -150,6 +151,8 @@ function agAudio(v){if(v.agA)return v.agA;let C=null;try{C=new (window.AudioCont
     else if(k==='shield'){tone(200,1200,.6,'sine',.3);tone(203,1210,.6,'sine',.2);}
     else if(k==='wall'){noise(2500,300,.35,.7,'bandpass');tone(90,50,.25,'sine',.5);}
     else if(k==='bump'){tone(110,60,.2,'sine',.6);noise(800,200,.15,.4);}
+    else if(k==='drift'){noise(2600,1100,.4,.35,'bandpass');}
+    else if(k==='dlvl'){tone(620,1240,.14,'triangle',.22);}
     else if(k==='boost'){noise(300,4000,.6,.5,'bandpass');}
     else if(k==='zap'){noise(7000,1500,.35,.7,'bandpass');tone(1800,300,.25,'square',.12);tone(90,60,.3,'sawtooth',.25);}
     else if(k==='wallon'){tone(60,140,1.,'sine',.8);noise(400,2500,1.,.3,'bandpass');}
@@ -164,9 +167,10 @@ function vizAgInput(v){if(v.agIn)return v.agIn;const I=v.agIn={tilt:null,tz:null
   addEventListener('deviceorientation',e=>{if(e.gamma==null)return;const o=(screen.orientation&&screen.orientation.angle)||0;I.tilt=o===90?e.beta:o===270?-e.beta:e.gamma;});
   return I;}
 function vizAgHud(v){let h=v.dlg.querySelector('.vz-game');if(!h){h=document.createElement('div');h.className='vz-game';
-  h.innerHTML='<div class="vzg-top"><span class="vzg-p"></span><span class="vzg-lp"></span><span class="vzg-t">0:00.00</span><span class="vzg-b"></span></div><div class="vzg-mid"></div><div class="vzg-l" aria-label="left"><i>‹</i></div><div class="vzg-r" aria-label="right"><i>›</i></div><button type="button" class="vzg-fire" aria-label="Fire weapon"><svg viewBox="0 0 24 24"></svg><span></span></button><div class="vzg-dg"><span></span><button type="button">Kopieren</button></div><button type="button" class="vzg-tb" aria-label="Tune steering">⚙</button><button type="button" class="vzg-pb" aria-label="Pause"><i></i><i></i></button><div class="vzg-fl"></div><div class="vzg-res" hidden></div><div class="vzg-rp" hidden><span><b>REPLAY</b> <em></em></span><i></i><button type="button">Exit</button></div><div class="vzg-pm" hidden><div><b>Pause</b><label class="vzg-vl">Effects <em></em><input type="range" min="0" max="1" step="0.01"></label><button type="button" data-p="go">Resume</button><button type="button" data-p="new">Restart</button><button type="button" data-p="set">Settings</button><button type="button" data-p="end">Quit</button></div></div><div class="vzg-tp" hidden></div>';
+  h.innerHTML='<div class="vzg-top"><span class="vzg-p"></span><span class="vzg-lp"></span><span class="vzg-t">0:00.00</span><span class="vzg-b"></span></div><div class="vzg-mid"></div><div class="vzg-dr" hidden><i></i><b>DRIFT</b></div><div class="vzg-l" aria-label="left"><i>‹</i></div><div class="vzg-r" aria-label="right"><i>›</i></div><button type="button" class="vzg-fire" aria-label="Fire weapon"><svg viewBox="0 0 24 24"></svg><span></span></button><div class="vzg-dg"><span></span><button type="button">Kopieren</button></div><button type="button" class="vzg-tb" aria-label="Tune steering">⚙</button><button type="button" class="vzg-pb" aria-label="Pause"><i></i><i></i></button><div class="vzg-fl"></div><div class="vzg-res" hidden></div><div class="vzg-rp" hidden><span><b>REPLAY</b> <em></em></span><i></i><button type="button">Exit</button></div><div class="vzg-pm" hidden><div><b>Pause</b><label class="vzg-vl">Effects <em></em><input type="range" min="0" max="1" step="0.01"></label><button type="button" data-p="go">Resume</button><button type="button" data-p="new">Restart</button><button type="button" data-p="set">Settings</button><button type="button" data-p="end">Quit</button></div></div><div class="vzg-tp" hidden></div>';
   h.style.cssText='position:absolute;inset:0;pointer-events:none;z-index:3;font-family:inherit;color:#fff;';
-  const st=document.createElement('style');st.textContent='.vz-game .vzg-top{position:absolute;top:calc(env(safe-area-inset-top) + 14px);left:0;right:0;display:flex;justify-content:center;align-items:baseline;gap:14px;font-variant-numeric:tabular-nums;font-weight:700;font-size:20px;letter-spacing:.04em;text-shadow:0 0 12px rgba(80,190,255,.8)}.vz-game .vzg-p{font-size:26px;color:#ffd84a}.vz-game .vzg-lp{font-size:15px;opacity:.85}.vz-game .vzg-b{opacity:.65;font-size:13px}.vz-game .vzg-mid{position:absolute;top:34%;left:0;right:0;text-align:center;font-weight:800;font-size:64px;letter-spacing:.06em;text-shadow:0 0 22px rgba(80,190,255,.9);transition:opacity .25s}.vz-game .vzg-mid small{display:block;font-size:18px;font-weight:600;opacity:.85;margin-top:6px}'
+  const st=document.createElement('style');st.textContent='.vz-game .vzg-dr{position:absolute;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 66px);width:180px;height:10px;border-radius:5px;border-radius:4px;background:rgba(255,255,255,.12);box-shadow:0 0 14px var(--c,#4cb4ff)}.vz-game .vzg-dr i{display:block;height:100%;width:0;border-radius:4px;background:var(--c,#4cb4ff);box-shadow:0 0 10px var(--c,#4cb4ff),0 0 22px var(--c,#4cb4ff)}.vz-game .vzg-dr b{position:absolute;left:0;right:0;top:12px;text-align:center;font-size:11px;letter-spacing:.35em;font-weight:900;font-style:italic;color:var(--c,#4cb4ff);text-shadow:0 0 10px var(--c,#4cb4ff)}.vz-game .vzg-dr[hidden]{display:none}'
+   +'.vz-game .vzg-top{position:absolute;top:calc(env(safe-area-inset-top) + 14px);left:0;right:0;display:flex;justify-content:center;align-items:baseline;gap:14px;font-variant-numeric:tabular-nums;font-weight:700;font-size:20px;letter-spacing:.04em;text-shadow:0 0 12px rgba(80,190,255,.8)}.vz-game .vzg-p{font-size:26px;color:#ffd84a}.vz-game .vzg-lp{font-size:15px;opacity:.85}.vz-game .vzg-b{opacity:.65;font-size:13px}.vz-game .vzg-mid{position:absolute;top:34%;left:0;right:0;text-align:center;font-weight:800;font-size:64px;letter-spacing:.06em;text-shadow:0 0 22px rgba(80,190,255,.9);transition:opacity .25s}.vz-game .vzg-mid small{display:block;font-size:18px;font-weight:600;opacity:.85;margin-top:6px}'
    +'.vz-game .vzg-fire{position:absolute;right:18px;bottom:calc(env(safe-area-inset-bottom) + 54px);width:86px;height:86px;border-radius:50%;pointer-events:auto;border:2px solid rgba(255,255,255,.25);background:rgba(20,22,28,.55);color:rgba(255,255,255,.35);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:0;font:700 11px/1 inherit;letter-spacing:.03em;transition:transform .08s,background .2s,box-shadow .2s;-webkit-tap-highlight-color:transparent}'
    +'.vz-game .vzg-fire svg{width:38px;height:38px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.vz-game .vzg-fire.on{color:#fff;background:rgba(255,110,40,.85);border-color:#ffc08a;box-shadow:0 0 22px rgba(255,120,50,.8)}.vz-game .vzg-fire.on.schild{background:rgba(40,150,255,.85);border-color:#a8dcff;box-shadow:0 0 22px rgba(60,170,255,.8)}.vz-game .vzg-fire:active{transform:scale(.92)}'
    +'.vz-game .vzg-l,.vz-game .vzg-r{position:absolute;bottom:0;height:46%;width:50%;pointer-events:auto;touch-action:none;display:flex;align-items:flex-end;padding:0 0 calc(env(safe-area-inset-bottom) + 72px);box-sizing:border-box;-webkit-tap-highlight-color:transparent}.vz-game .vzg-l{left:0;justify-content:flex-start;padding-left:22px}.vz-game .vzg-r{right:0;justify-content:flex-end;padding-right:22px}.vz-game .vzg-l i,.vz-game .vzg-r i{font-style:normal;font-size:44px;font-weight:300;line-height:1;width:66px;height:66px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);color:rgba(255,255,255,.55);transition:background .08s}.vz-game .vzg-l.dn i,.vz-game .vzg-r.dn i{background:rgba(80,190,255,.35);color:#fff}.vz-game.nobtn .vzg-l,.vz-game.nobtn .vzg-r{display:none}.vz-game .vzg-fire{right:50%!important;transform:translateX(50%);bottom:calc(env(safe-area-inset-bottom) + 30px)!important;z-index:2}.vz-game .vzg-fire:active{transform:translateX(50%) scale(.92)}'
@@ -279,8 +283,13 @@ function agPause(v,on){const g=v.agg,pm=v.dlg.querySelector('.vz-game .vzg-pm');
   else{if(!g.paused)return;const d=now-g.paused;g.paused=0;pm.hidden=true;g.t0+=d;if(g.race)g.race+=d;if(g.lapT)g.lapT+=d;if(g.bt)g.bt+=d;g.lt=now;
     for(const L of [g.shots,g.mines,g.fx,g.burn||[],g.zaps||[]])for(const x of L)x.t+=d;if(g.quake)g.quake.t+=d;for(const o of [g,...g.opp])if(o.hitT)o.hitT+=d;if(g.bumpT)g.bumpT+=d;}}
 const agFmt=ms=>{const s=ms/1000,m=Math.floor(s/60);return m+':'+(s%60).toFixed(2).padStart(5,'0');};
+const AG_DRC=[[.85,.9,1],[.3,.7,1],[1,.55,.15],[.8,.35,1]],AG_DRH=['#d8e4ff','#4cb4ff','#ff8c26','#cc5aff'];   // Driftstufen: Funkenfarbe, Anzeige
 const agShip=(z,lat,x)=>Object.assign({z,lat,psi:0,vpsi:0,om:0,roll:0,spd:0,boost:0,slow:1,hitT:0,padK:-1,obK:-1,h:0,vy:0,air:false,spin:0},x||{});
 function agOppShips(me){const o=AG_SHIPS.map((_,i)=>i).filter(i=>i!==me);for(let i=o.length-1;i>0;i--){const k=Math.floor(Math.random()*(i+1));[o[i],o[k]]=[o[k],o[i]];}return o;}
+// Geist: Bestzeit-Fahrt (Zeit, z, seitlich, Höhe, Nase, Rollen; 15 Bilder/s) im Gerät speichern
+function agGhostSave(v,g){try{const f=[];g.rec.forEach((r,i)=>{if(i%2&&i!==g.rec.length-1)return;const a=r.s[0];f.push(Math.round(r.t),a[0],a[1],a[2],a[3],a[4]);});
+  const G={t:g.fin,sm:g.sm,f};v.ghost=G;localStorage.setItem('ag_ghost',JSON.stringify(G));}catch(e){dl('Geist: '+e.message);}}
+function agGhostLoad(v){if(v.ghost!==undefined)return;try{v.ghost=JSON.parse(localStorage.getItem('ag_ghost')||'null');}catch{v.ghost=null;}}
 function agNew(){const z0=AG_ZST-2.6,me=agShipIx(AG_SET.ship),os=agOppShips(me);return Object.assign(agShip(z0,0),{sm:me,st:'intro',t0:performance.now(),lt:performance.now(),race:0,wpn:null,wpK:-1,shield:0,flash:0,cdl:-1,
   opp:[agShip(z0+3.2,-.5,{tint:[1,.25,.2]}),agShip(z0+6.4,.5,{tint:[.25,1,.45]}),agShip(z0+9.6,0,{tint:[.85,.35,1]})].map((o,i)=>Object.assign(o,{sk:.95+i*.03,ai:Math.random()*100,sm:os[i%os.length]})),
   shots:[],mines:[],fx:[],burn:[],walls:[],zaps:[],lap:0,laps:[],rec:[]});}
@@ -304,8 +313,8 @@ function vizAgGame(v,ts,val){if(!v.agg)v.agg=agNew();const g=v.agg;g.best=g.best
     s.u=(s.u||0)+(inp-(s.u||0))*(1-Math.exp(-dt/(isP?.03:.08)));
     const ap=isP&&g.apOn;
     if(ap){s.u=0;const dl=(0-s.lat)*(1-Math.exp(-dt/1.4));s.vpsi=Math.atan2(dl/Math.max(dt,1e-4),Math.max(1,s.spd));s.psi+=(s.vpsi-s.psi)*(1-Math.exp(-dt/.15));}
-    else{const turn=kap*s.spd;s.psi+=(s.u*(isP?AG_T.yaw:YAW)-turn)*dt;s.psi=Math.max(-.9,Math.min(.9,s.psi));
-    const grip=s.air?.8:isP?9.5:7;s.vpsi+=((s.psi-s.vpsi)*grip-turn)*dt;s.vpsi=Math.max(-.9,Math.min(.9,s.vpsi));}
+    else{const turn=kap*s.spd;s.psi+=(s.u*(isP?AG_T.yaw*(g.dr?1.2:1):YAW)-turn)*dt;s.psi=Math.max(-.9,Math.min(.9,s.psi));
+    const grip=s.air?.8:isP?(g.dr?4:9.5):7;s.vpsi+=((s.psi-s.vpsi)*grip-turn)*dt;s.vpsi=Math.max(-.9,Math.min(.9,s.vpsi));}
     s.slow+=(1-s.slow)*(1-Math.exp(-dt/1.4));if(s.slowT>0)s.slowT-=dt;s.boost*=Math.exp(-dt/1.4);s.spin=Math.max(0,s.spin-dt);
     if(racing||g.st==='done')s.spd=base*(s.sk||1)*(1+.6*s.boost)*s.slow*(s.spin>0?.45:1)*(s.slowT>0?.5:1)*(g.st==='done'&&isP?.85:1);else s.spd=0;
     const fwd=s.spd*Math.cos(s.vpsi);s.z+=fwd*dt;s.lat+=s.spd*Math.sin(s.vpsi)*dt;
@@ -337,6 +346,17 @@ function vizAgGame(v,ts,val){if(!v.agg)v.agg=agNew();const g=v.agg;g.best=g.best
   const N=Math.max(1,Math.ceil(dt/.0125),Math.ceil(base*1.7*dt/.3)),hdt=dt/N;   // bei hohem Tempo mehr Teilschritte, damit nichts durchrutscht
   // Autopilot wie bei Wipeout: gleitet sanft in die Mitte und gleichmäßig durch, Sperren werden durchflogen
   g.apOn=g.st==='done'||g.auto>0;if(g.apOn){steer=0;g.auto=Math.max(0,(g.auto||0)-dt);}
+  // Driften: eine Weile voll einlenken → das Heck bricht aus (weniger Haftung), die Ladung steigt Blau → Orange → Lila.
+  // Loslassen (oder Gegenlenken) zündet den Schub; wer dabei an der Bande schleift, verliert die Ladung.
+  if(racing&&!g.apOn){const a=Math.abs(steer),sg=Math.sign(steer);
+    if(!g.dr){if(a>.82&&!g.air&&g.spd>base*.55){g.drH=(g.drH||0)+dt;if(g.drH>.32){g.dr={d:sg,c:0,l:0};sf('drift');agBuzz(15);}}else g.drH=0;}
+    else{const D=g.dr,wall=ts-(g.scrT||0)<120;
+      D.off=a<.3?(D.off||0)+dt:0;   // kurz loslassen und nachtippen hält den Drift (0,18 s)
+      if(D.off>.18||(a>.3&&sg===-D.d)||g.air||wall){if(!wall&&D.l>0){g.boost=Math.max(g.boost||0,[0,.55,.85,1.2][D.l]);g.kick=Math.max(g.kick||0,.45+.3*D.l);sf('boost');if(D.l>2)sf('thump');agBuzz([20,15,30+D.l*15]);agFlash(.08+.05*D.l,AG_DRH[D.l]);g.shake=Math.max(g.shake||0,.15+.1*D.l);}
+        g.dr=null;g.drH=0;}
+      else{D.c+=dt*(.7+Math.abs(g.psi-g.vpsi)*3);const l=D.c>3.4?3:D.c>2?2:D.c>.9?1:0;if(l>D.l){D.l=l;sf('dlvl');agBuzz(12+l*6);}}}}
+  else{g.dr=null;g.drH=0;}
+  {const dh=hud.querySelector('.vzg-dr');if(g.dr){const D=g.dr;dh.hidden=false;dh.style.setProperty('--c',AG_DRH[D.l]);dh.firstChild.style.width=Math.round(Math.min(1,D.c/3.4)*100)+'%';dh.dataset.l=D.l;}else if(!dh.hidden)dh.hidden=true;}
   for(let k=0;k<N;k++)phys(g,steer,true,hdt);g.cps=(g.cps||0)+(g.psi-(g.cps||0))*(1-Math.exp(-dt/.25));g.shield=Math.max(0,g.shield-dt);g.flash=Math.max(0,g.flash-dt*2);
   // Gegner: gleiche Physik, Regler hält Ideallinie, weicht Sperren aus, holt Boosts
   for(const o of g.opp){const inp=aiInp(o,YAW,false,val.steer??1);for(let k=0;k<N;k++)phys(o,inp,false,hdt);
@@ -398,10 +418,11 @@ function vizAgGame(v,ts,val){if(!v.agg)v.agg=agNew();const g=v.agg;g.best=g.best
     {const ln=Math.max(0,Math.min(AG_NL,Math.floor((g.z+2.6-AG_ZST)/AG_LAP)));if(!g.lapT)g.lapT=g.race;
      if(ln>g.lap){const lt=ts-g.lapT;g.lapT=ts;g.lap=ln;g.laps.push(lt);const nb=!g.blap||lt<g.blap;if(nb){g.blap=lt;try{localStorage.setItem('vz_ag_blap',String(lt));}catch{}}
       if(ln<AG_NL){mid.style.opacity=1;mid.innerHTML=(ln===AG_NL-1?'FINAL LAP':'LAP '+(ln+1))+'<small>'+agFmt(lt)+(nb?' · fastest lap':'')+'</small>';sf('pick');agBuzz([20,30,20]);const myL=ln;setTimeout(()=>{if(v.agg===g&&g.lap===myL&&g.st==='race')mid.style.opacity=0;},1800);}}}
-    if(g.z+2.6>=AG_ZFI){g.st='done';g.fin=ts-g.race;g.t0=ts;g.place=place;const nb=!g.best||g.fin<g.best;if(nb){g.best=g.fin;try{localStorage.setItem('vz_ag_best3',String(g.fin));}catch{}}
+    if(g.z+2.6>=AG_ZFI){g.st='done';g.fin=ts-g.race;g.t0=ts;g.place=place;const nb=!g.best||g.fin<g.best;if(nb){g.best=g.fin;try{localStorage.setItem('vz_ag_best3',String(g.fin));}catch{}agGhostSave(v,g);}
       mid.style.opacity=1;mid.innerHTML=(place===1?'VICTORY':['1ST','2ND','3RD','4TH'][place-1]+' PLACE')+'<small>'+agFmt(g.fin)+(nb?' · new record':'')+'</small>';g.nb=nb;g.auto=0;hud.classList.add('fin');{const H=agHS(),bl=g.laps.length?Math.min(...g.laps):0,q={race:agHSq(H.race,g.fin)?g.fin:0,lap:agHSq(H.lap,bl)?bl:0};if(q.race||q.lap)g.hsAsk=q;}sf('win');try{agVib([30,60,30]);}catch{}}}
   if(g.race&&g.st!=='count')for(const o of g.opp){const ln=Math.max(0,Math.min(AG_NL,Math.floor((o.z+2.6-AG_ZST)/AG_LAP)));if(ln>(o.lap||0)){o.laps=o.laps||[];o.laps.push(ts-(o.lapT||g.race));o.lapT=ts;o.lap=ln;if(ln>=AG_NL&&!o.fin)o.fin=ts-g.race;}}
   if(g.st==='done'){const res=hud.querySelector('.vzg-res');if(ts-g.t0>2200){if(res.hidden){res.hidden=false;mid.style.opacity=0;}if(ts-(g.resT||0)>300){g.resT=ts;agResDraw(g,res);}}}
+  if(g.race&&racing)g.ghT=ts-g.race;
   // Aufzeichnung fürs Replay (30 Bilder/s, nur Zahlen): alle Gleiter, Geschosse, Minen, Explosionen, Bebenwelle, Funken
   if(g.race&&(racing||(g.st==='done'&&ts-g.t0<6000))&&ts-(g.recT||0)>=33){g.recT=ts;const now=performance.now(),r2=x=>Math.round(x*1000)/1000;
     g.rec.push({t:ts-g.race,s:[g,...g.opp].map(o=>[r2(o.z),r2(o.lat),r2(o.h),r2(o.psi),r2(o.roll),r2(o.boost),r2(o.spin)]),c:r2(g.cps||0),sh:g.shield>0?1:0,
@@ -642,6 +663,11 @@ function agFxBuild(v,g,P,TT){const T=v.agT,out=T.fx,{ad,mu,nz}=agV;let n=0;const
     const bb=Math.min(1,b),len=(.4+.5*bb)*fl,E=ad(O,mu(s.SF,-len)),E2=ad(O,mu(s.SF,-len*1.7));
     Q(O,E,.045+.012*bb,4,bb>.3?[.75,.95,1]:[.8,.7,1],1.3+.7*bb);Q(O,E2,.11+.03*bb,4,bb>.3?[.2,.7,1]:[.45,.25,1],.4+.3*bb);spr(O,.18+.05*bb,[.6,.45,1],.8+.5*bb);
     light(ad(O,mu(s.SUp,-.02),mu(s.SF,-.25)),mu(b>.3?[.3,.75,1]:[.55,.35,1],.9+1.6*b),2.2,s.me?9:2);}
+  // Driften: Funken sprühen aus beiden hinteren Ecken, Farbe nach Ladestufe
+  if(g.dr&&!(g.cam&&g.cam.hide)){const c=AG_DRC[g.dr.l],I=.7+.3*Math.min(1,g.dr.c);for(const sd of [-1,1]){const C=ad(P.S0,mu(P.SF,-.62),mu(P.SR,sd*.27),mu(P.SUp,.03));
+      for(let j=0;j<10;j++){const ph=((now/1000)*(3+hs(j,31))+hs(j,32+sd))%1;const pos=ad(C,mu(P.SR,sd*ph*(.15+.4*hs(j,33))),mu(P.SUp,ph*(.3+.5*hs(j,34))-ph*ph*.7),mu(P.SF,-ph*(.8+1.6*hs(j,35))));Q(pos,ad(pos,mu(P.SF,.1)),.018,3,c,3*I*(1-ph*.7));}
+      spr(C,.12,c,1.6*I);}
+    light(ad(P.S0,mu(P.SF,-.7)),mu(c,1.6),3,8);}
   // Raketen mit Leuchtspur, Minen, Explosionen mit Blitzen und Funken
   for(const s of g.shots||[]){const p=agWorld(s.z,s.lat,.22);spr(p,.2,[1,.95,.8],3.2);spr(p,.7,[1,.45,.15],.7);
     const hst=s.hist||[[s.z-2.4,s.lat],[s.z-1.2,s.lat]];let pp=p;for(let i=hst.length-1;i>=0;i--){const q=agWorld(hst[i][0],hst[i][1],.22),f=1-(hst.length-1-i)/hst.length;Q(pp,q,.035,3,[1,.95,.85],2.2*f);Q(pp,q,.09,3,[1,.5,.15],1.4*f);Q(pp,q,.3,3,[1,.25,.05],.22*f);pp=q;}
@@ -713,9 +739,13 @@ function vizShipDraw(v,tgt,val){const gl=v.gl;let SP=null;try{SP=vizShipProg(v);
   gl.enableVertexAttribArray(0);gl.enableVertexAttribArray(1);gl.enableVertexAttribArray(2);
   const agTn=z=>{const t=agLz(z)%350;return t>=159&&t<=246;};const g=v.agg,T=(performance.now()/1000)%3600,ships=g&&g.cam&&(g.cam.hide||(g.cam.top&&agTn(g.z+2.6)))?[]:[{sm:g?g.sm:agShipIx(AG_SET.ship),S0:P.S0,SR:P.SR,SUp:P.SUp,SF:P.SF,tint:[1,1,1],jet:.4+.9*P.B+1.8*P.boost,sh:g&&g.shield>0}];
   if(g)for(const o of g.opp){const d=o.z-g.z;if(d<(g.rep?-30:-6)||d>70)continue;if(g.cam&&g.cam.top&&agTn(o.z+2.6))continue;const q=agPoseOf(o.z+2.6,o.lat,o.roll+(o.spin>0?o.spin*9:0),.16+.012*Math.sin(T*2.7+o.ai)+o.h,o.psi);ships.push({sm:o.sm,S0:q.S0,SR:q.SR,SUp:q.SUp,SF:q.SF,tint:[1,1,1],jet:.5+1.6*o.boost});}   // jeder Gegner mit eigenem Gleiter in Originalfarben
-  for(const sp of ships){const sh=vizShipModel(v,sp.sm||0);if(!sh.ok)continue;f3('S0',sp.S0);f3('SR',sp.SR);f3('SU',sp.SUp);f3('SF',sp.SF);gl.uniform3f(u.TINT,...sp.tint);gl.uniform1f(u.JET,sp.jet);gl.uniform1f(u.SHL,sp.sh?1:0);
-  for(const pass of [0,1,2])for(const p of sh.prims){const m=sh.mats[p.mat];const add=m.name==='Glow'||m.name==='Boost';const ps=add?2:m.blend?1:0;if(ps!==pass)continue;
-    if(pass===0){gl.disable(gl.BLEND);gl.depthMask(true);}else if(pass===1){gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);}else{gl.enable(gl.BLEND);gl.blendFunc(gl.ONE,gl.ONE);gl.depthMask(false);}
+  // Geist: deine Bestzeit fährt als durchsichtiger Gleiter mit
+  {const G=g&&!g.rep&&v.state==='game'&&AG_SET.ghost!==0&&g.ghT>0?v.ghost:null;if(G){const f=G.f,n=f.length/6,t=g.ghT;let lo=0,hi=n-1;if(n>1&&t<=f[(n-1)*6]){while(hi-lo>1){const m=(lo+hi)>>1;if(f[m*6]<=t)lo=m;else hi=m;}
+      const k=Math.max(0,Math.min(1,(t-f[lo*6])/Math.max(1,f[hi*6]-f[lo*6]))),L=j=>f[lo*6+j]+(f[hi*6+j]-f[lo*6+j])*k,d=L(1)-g.z;
+      if(d>-6&&d<70){const q=agPoseOf(L(1)+2.6,L(2),L(5),.16+L(3),L(4));ships.push({gh:1,sm:G.sm,S0:q.S0,SR:q.SR,SUp:q.SUp,SF:q.SF,tint:[1,1,1],jet:.6});}}}}
+  for(const sp of ships){const sh=vizShipModel(v,sp.sm||0);if(!sh.ok)continue;gl.uniform1f(u.GH,sp.gh?1:0);f3('S0',sp.S0);f3('SR',sp.SR);f3('SU',sp.SUp);f3('SF',sp.SF);gl.uniform3f(u.TINT,...sp.tint);gl.uniform1f(u.JET,sp.jet);gl.uniform1f(u.SHL,sp.sh?1:0);
+  for(const pass of [0,1,2])for(const p of sh.prims){const m=sh.mats[p.mat];const add=m.name==='Glow'||m.name==='Boost';const ps=add?2:m.blend?1:0;if(sp.gh?pass!==0:ps!==pass)continue;
+    if(sp.gh){gl.enable(gl.BLEND);gl.blendFunc(gl.ONE,gl.ONE);gl.depthMask(false);}else if(pass===0){gl.disable(gl.BLEND);gl.depthMask(true);}else if(pass===1){gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);}else{gl.enable(gl.BLEND);gl.blendFunc(gl.ONE,gl.ONE);gl.depthMask(false);}
     gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,m.tb);gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,m.tm||m.tb);gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,m.te||m.tb);gl.activeTexture(gl.TEXTURE0);
     gl.uniform1f(u.HM,m.tm?1:0);gl.uniform1f(u.HE,m.te?1:0);gl.uniform1f(u.EMF,m.emf[0]);gl.uniform1f(u.ALP,m.bcf[3]);gl.uniform1f(u.MET,m.met);gl.uniform1f(u.ROU,m.rough);gl.uniform1f(u.ADD,add?1:0);gl.uniform1f(u.ISJ,p.jet?1:0);
     gl.bindBuffer(gl.ARRAY_BUFFER,p.pos);gl.vertexAttribPointer(0,3,gl.FLOAT,false,0,0);gl.bindBuffer(gl.ARRAY_BUFFER,p.nrm);gl.vertexAttribPointer(1,3,gl.FLOAT,false,0,0);gl.bindBuffer(gl.ARRAY_BUFFER,p.uv);gl.vertexAttribPointer(2,2,gl.FLOAT,false,0,0);
@@ -727,7 +757,7 @@ function vizShipDraw(v,tgt,val){const gl=v.gl;let SP=null;try{SP=vizShipProg(v);
 // =====================================================================================================
 // AntiGrav – eigene App. Ab hier: Grundgerüst (Bildschleife, Himmel, Nachbearbeitung, Menü, Einstellungen, Updates)
 // =====================================================================================================
-const AG_SET_DEF={ship:0,ctrl:0,speed:1,curvy:1,width:1,steer:1,bank:1,glow:1,sky:1};
+const AG_SET_DEF={ship:0,ghost:1,ctrl:0,speed:1,curvy:1,width:1,steer:1,bank:1,glow:1,sky:1};
 // Spannweiten wie in VIZ (dort waren die Regler weiter als angegeben), Tempo bis zum Vierfachen
 const AG_SET_L=[['speed','Speed',.3,10,.05],['curvy','Curviness',.2,2.8,.01],['width','Track width',.6,2.1,.01],['bank','Banking',0,3.2,.01],['glow','Track lighting',0,3.2,.01],['sky','Dusk ↔ Night',0,1,.01],['steer','Opponents: steering accuracy',.3,3.2,.01]];
 let AG_SET=(()=>{try{return Object.assign({},AG_SET_DEF,JSON.parse(localStorage.getItem('ag_set')||'{}'));}catch{return Object.assign({},AG_SET_DEF);}})();
@@ -797,7 +827,7 @@ function agFrame60(ts){requestAnimationFrame(agFrame60);if(!AG_SKYP)return;
 requestAnimationFrame(agFrame60);
 
 // ---- Spiel starten / beenden
-function agStart(){const A=agAudio(v);try{A.C&&A.C.resume();}catch{}const b=v.agg&&v.agg.best,bl=v.agg&&v.agg.blap;v.agg=agNew();v.agg.best=b;v.agg.blap=bl;v.state='game';
+function agStart(){agGhostLoad(v);const A=agAudio(v);try{A.C&&A.C.resume();}catch{}const b=v.agg&&v.agg.best,bl=v.agg&&v.agg.blap;v.agg=agNew();v.agg.best=b;v.agg.blap=bl;v.state='game';
   $('menu').hidden=true;const hud=vizAgHud(v);hud.hidden=false;hud.classList.remove('fin','rep');hud.querySelector('.vzg-res').hidden=true;hud.querySelector('.vzg-pm').hidden=true;try{NV.immersive?.(true);}catch{}}
 function closeViz(){const A=v.agA;if(A&&A.ok){try{A.master.gain.setTargetAtTime(0,A.C.currentTime,.05);}catch{}}
   if(v.agg&&v.agg.rep)agReplayEnd(v);v.state='menu';const hud=v.dlg.querySelector('.vz-game');if(hud){hud.hidden=true;hud.querySelector('.vzg-pm').hidden=true;hud.querySelector('.vzg-res').hidden=true;}
@@ -837,6 +867,7 @@ function agSetOpen(on){const el=$('set');if(!on){el.hidden=true;return;}
   const sl=AG_SET_L.map(([k,l,mi,ma,st])=>`<label>${l}<b>${(+AG_SET[k]).toFixed(2)}</b><input type="range" data-k="${k}" min="${mi}" max="${ma}" step="${st}" value="${AG_SET[k]}"></label>`).join('');
   el.innerHTML=`<div class="box"><h2>Settings</h2>
    <div class="seg"><span>Controls</span>${['Buttons','Tilt','Swipe'].map((n,i)=>`<button type="button" data-c="${i}" class="${Math.round(AG_SET.ctrl)===i?'on':''}">${n}</button>`).join('')}</div>
+   <div class="seg"><span>Ghost (your best race)</span>${['Off','On'].map((n,i)=>`<button type="button" data-gh="${i}" class="${(AG_SET.ghost??1)===i?'on':''}">${n}</button>`).join('')}</div>
    <label>Effects volume<b>${Math.round(AG_FXV*100)} %</b><input type="range" data-fx="1" min="0" max="1" step="0.01" value="${AG_FXV}"></label>
    ${sl}
    <div class="row"><button type="button" data-a="def">Defaults</button><button type="button" data-a="upd">Check for update</button></div>
@@ -845,8 +876,8 @@ function agSetOpen(on){const el=$('set');if(!on){el.hidden=true;return;}
   el.hidden=false;}
 $('set').addEventListener('input',e=>{const t=e.target;if(t.dataset.k){AG_SET[t.dataset.k]=+t.value;t.previousElementSibling.textContent=(+t.value).toFixed(2);agSaveSet();}
   if(t.dataset.fx){AG_FXV=+t.value;t.previousElementSibling.textContent=Math.round(AG_FXV*100)+' %';try{localStorage.setItem('vz_ag_fxv',String(AG_FXV));}catch{}}});
-$('set').addEventListener('click',e=>{const c=e.target.closest('[data-c]');if(c){AG_SET.ctrl=+c.dataset.c;agSaveSet();agSetOpen(true);return;}const a=e.target.dataset.a;
-  if(a==='close'||e.target.id==='set'){agSetOpen(false);}else if(a==='def'){const c0=AG_SET.ctrl;AG_SET=Object.assign({},AG_SET_DEF,{ctrl:c0,ship:AG_SET.ship});agSaveSet();agSetOpen(true);toast('Defaults restored');}
+$('set').addEventListener('click',e=>{const gb=e.target.closest('[data-gh]');if(gb){AG_SET.ghost=+gb.dataset.gh;agSaveSet();agSetOpen(true);return;}const c=e.target.closest('[data-c]');if(c){AG_SET.ctrl=+c.dataset.c;agSaveSet();agSetOpen(true);return;}const a=e.target.dataset.a;
+  if(a==='close'||e.target.id==='set'){agSetOpen(false);}else if(a==='def'){const c0=AG_SET.ctrl;AG_SET=Object.assign({},AG_SET_DEF,{ctrl:c0,ship:AG_SET.ship,ghost:AG_SET.ghost});agSaveSet();agSetOpen(true);toast('Defaults restored');}
   else if(a==='upd')checkUpdate(true);else if(a==='key')ghToken().then(ok=>{if(ok)checkUpdate(true);});});
 
 // ---- Updates aus dem GitHub-Repo (privat: braucht einen Schlüssel mit Lesezugriff)
