@@ -22,6 +22,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 #mtrk{display:flex;align-items:center;gap:10px;width:min(100%,420px);margin-bottom:6px}#mtrk>button{width:56px;height:42px;flex:none;border-radius:13px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);font-size:22px;line-height:1;font-weight:700;padding:0}
 #mtrk>div{flex:1;text-align:center}#mtrk b{display:block;font-size:10px;letter-spacing:.3em;opacity:.55;font-weight:600}#mtrk span{display:block;font-size:16px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
 body.toy .vz-game .vzg-top,body.toy .vz-game .vzg-gd,body.toy #menu .sub,body.toy #mship,body.toy #mtrk{text-shadow:0 1px 3px rgba(60,20,50,.75),0 0 12px rgba(60,20,50,.45)}body.toy #menu{background:linear-gradient(180deg,rgba(40,10,40,.35),rgba(0,0,0,0) 28%,rgba(0,0,0,0) 45%,rgba(30,10,30,.55))}
+#sndlog{position:fixed;right:14px;top:calc(env(safe-area-inset-top) + 64px);z-index:9;pointer-events:none;text-align:right;font:600 12px/1.5 ui-monospace,Menlo,monospace;color:#9ff}#sndlog div{background:rgba(0,0,0,.55);border-radius:6px;padding:1px 7px;margin-bottom:3px;display:inline-block;clear:both;float:right;transition:opacity .5s}#sndlog div.off{opacity:0}
 #menu .ver{margin-top:12px;font-size:11px;opacity:.45}#menu .cr{font-size:10px;opacity:.35;margin-top:4px;text-align:center}
 #set,#dlg{position:fixed;inset:0;z-index:8;background:rgba(4,5,8,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:18px}
 #set .box,#dlg .box{width:min(100%,440px);max-height:92vh;overflow:auto;background:rgba(14,16,22,.96);border:1px solid rgba(255,255,255,.14);border-radius:20px;padding:16px 18px}
@@ -134,7 +135,7 @@ const AG_IC={rak:'<path d="M12 2c3 3 4 7 3 12h-6C8 9 9 5 12 2z"/><path d="M9 14l
   turbo:'<path d="M5 6l6 6-6 6M12 6l6 6-6 6"/>',wand:'<rect x="4" y="5" width="16" height="14" rx="1.5"/><path d="M7 10c2-1.5 3 1.5 5 0s3 1.5 5 0M7 14c2-1.5 3 1.5 5 0s3 1.5 5 0"/>',auto:'<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="2.2"/><path d="M3.6 11h6.2M14.2 11h6.2M12 14.2v6.3"/>',beben:'<path d="M2 14c2 0 2-5 4-5s2 9 4 9 2-12 4-12 2 9 4 9 2-4 4-4"/>',none:'<circle cx="12" cy="12" r="7" stroke-dasharray="3 3"/>'};
 // ---- Geräusche: alles im Gerät erzeugt (Web Audio). Eigene Sounddateien folgen später.
 function agAudio(v){if(v.agA)return v.agA;let C=null;try{C=new (window.AudioContext||window.webkitAudioContext)();}catch{}if(!C)return v.agA={ok:false};
-  const A=v.agA={ok:true,C,master:C.createGain()};A.master.gain.value=.0;A.master.connect(C.destination);
+  const A=v.agA={ok:true,C,master:C.createGain()};A.master.gain.value=.0;{const cp=C.createDynamicsCompressor();cp.threshold.value=-20;cp.knee.value=12;cp.ratio.value=4;cp.attack.value=.003;cp.release.value=.25;const mk=C.createGain();mk.gain.value=1.35;A.master.connect(cp);cp.connect(mk);mk.connect(C.destination);}
   const nb=C.createBuffer(1,C.sampleRate*2,C.sampleRate),nd=nb.getChannelData(0);for(let i=0;i<nd.length;i++)nd[i]=Math.random()*2-1;A.noise=nb;
   // Triebwerk: zwei verstimmte Sägezähne + Unterton durch Tiefpass, dazu gefiltertes Rauschen (Fahrtwind/Drift)
   const lp=C.createBiquadFilter();lp.type='lowpass';lp.frequency.value=600;lp.Q.value=4;const eg=C.createGain();eg.gain.value=.25;lp.connect(eg);eg.connect(A.master);
@@ -155,9 +156,12 @@ function agAudio(v){if(v.agA)return v.agA;let C=null;try{C=new (window.AudioCont
     if(k==='scrape'){const src=C.createBufferSource();src.buffer=d;src.loop=true;src.connect(A.scr);src.start();A.scrS={src};A.scrSyn.forEach(x=>x.gain.value=0);}}).catch(()=>{});
   A.play=(k,gain,rate,dest)=>{const d=A.buf[k];if(!d||C.state!=='running')return false;const src=C.createBufferSource();src.buffer=d;if(rate)src.playbackRate.value=rate;const gg=C.createGain();gg.gain.value=gain??1;src.connect(gg);gg.connect(dest||A.master);src.start();return true;};
   // sp = {dz, dx}: Lage relativ zu dir (vorn +, rechts +) → HRTF-Panner, mit Kopfhörern hört man vorn/hinten/links/rechts
-  A.sfx=(k,sp)=>{if(C.state!=='running')return;let dest=A.master;if(sp){if(Math.abs(sp.dz)>70)return;try{const pn=C.createPanner();pn.panningModel='HRTF';pn.distanceModel='inverse';pn.refDistance=5;pn.rolloffFactor=1.6;
+  A.sfx=(k,sp)=>{if(C.state!=='running')return;agSndLog(k,sp);let dest=A.master;if(sp){if(Math.abs(sp.dz)>70)return;try{const pn=C.createPanner();pn.panningModel='HRTF';pn.distanceModel='inverse';pn.refDistance=5;pn.rolloffFactor=1.6;
       const x=sp.dx*2,z=-sp.dz;if(pn.positionX){pn.positionX.value=x;pn.positionY.value=.5;pn.positionZ.value=z;}else pn.setPosition(x,.5,z);pn.connect(A.master);dest=pn;}catch{}}
-    if(k==='wall'&&!sp&&A.play('scrhit',.85,.9+Math.random()*.2))return;if(A.play(k,k==='boom'||k==='mexp'?.9:k==='count'?.8:1,0,dest))return;const t=C.currentTime,out=C.createGain();out.connect(dest);
+    if(k==='wall'&&!sp&&A.play('scrhit',.85,.9+Math.random()*.2))return;const t=C.currentTime,out=C.createGain();out.connect(dest);
+    if(k==='boom'||k==='mexp'){const s=k==='boom'?1:.7,o=C.createOscillator(),og=C.createGain();o.frequency.setValueAtTime(95,t);o.frequency.exponentialRampToValueAtTime(26,t+.75);og.gain.setValueAtTime(.95*s,t);og.gain.exponentialRampToValueAtTime(.001,t+.8);o.connect(og);og.connect(out);o.start(t);o.stop(t+.85);
+      const n=C.createBufferSource();n.buffer=A.noise;const f=C.createBiquadFilter();f.type='lowpass';f.frequency.setValueAtTime(1600,t);f.frequency.exponentialRampToValueAtTime(70,t+.6);const ng2=C.createGain();ng2.gain.setValueAtTime(.7*s,t);ng2.gain.exponentialRampToValueAtTime(.001,t+.65);n.connect(f);f.connect(ng2);ng2.connect(out);n.start(t);n.stop(t+.7);}   // Wumms unter jeder Explosion
+    if(A.play(k,k==='boom'||k==='mexp'?.9:k==='count'?.8:1,0,dest))return;
     const tone=(f0,f1,d,type,g)=>{const o=C.createOscillator(),gg=C.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+d);gg.gain.setValueAtTime(g,t);gg.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(gg);gg.connect(out);o.start(t);o.stop(t+d+.05);};
     const noise=(f0,f1,d,g,type)=>{const s=C.createBufferSource();s.buffer=A.noise;const f=C.createBiquadFilter();f.type=type||'lowpass';f.frequency.setValueAtTime(f0,t);f.frequency.exponentialRampToValueAtTime(Math.max(30,f1),t+d);const gg=C.createGain();gg.gain.setValueAtTime(g,t);gg.gain.exponentialRampToValueAtTime(.001,t+d);s.connect(f);f.connect(gg);gg.connect(out);s.start(t);s.stop(t+d+.05);};
     if(k==='beep')tone(660,660,.18,'square',.25);else if(k==='go')tone(990,990,.5,'square',.3);
@@ -168,7 +172,8 @@ function agAudio(v){if(v.agA)return v.agA;let C=null;try{C=new (window.AudioCont
     else if(k==='shield'){tone(200,1200,.6,'sine',.3);tone(203,1210,.6,'sine',.2);}
     else if(k==='wall'){noise(2500,300,.35,.7,'bandpass');tone(90,50,.25,'sine',.5);}
     else if(k==='bump'){tone(110,60,.2,'sine',.6);noise(800,200,.15,.4);}
-    else if(k==='boost'){noise(300,4000,.6,.5,'bandpass');}
+    else if(k==='boost'){noise(300,6000,.7,.75,'bandpass');tone(110,440,.6,'sawtooth',.22);tone(55,110,.75,'sine',.7);noise(9000,2500,.45,.25,'highpass');}
+    else if(k==='pass'){noise(2600,450,.5,.6,'bandpass');tone(320,110,.45,'sawtooth',.08);}
     else if(k==='zap'){noise(7000,1500,.35,.7,'bandpass');tone(1800,300,.25,'square',.12);tone(90,60,.3,'sawtooth',.25);}
     else if(k==='wallon'){tone(60,140,1.,'sine',.8);noise(400,2500,1.,.3,'bandpass');}
     else if(k==='ring'){tone(880,1760,.25,'triangle',.18);tone(1320,2640,.2,'sine',.1);noise(6000,2000,.15,.12,'highpass');}
@@ -300,6 +305,9 @@ function agPause(v,on){const g=v.agg,pm=v.dlg.querySelector('.vz-game .vzg-pm');
   else{if(!g.paused)return;const d=now-g.paused;g.paused=0;pm.hidden=true;g.t0+=d;if(g.race)g.race+=d;if(g.lapT)g.lapT+=d;if(g.bt)g.bt+=d;g.lt=now;
     for(const L of [g.shots,g.mines,g.fx,g.burn||[],g.zaps||[]])for(const x of L)x.t+=d;if(g.quake)g.quake.t+=d;for(const o of [g,...g.opp])if(o.hitT)o.hitT+=d;if(g.bumpT)g.bumpT+=d;}}
 const agFmt=ms=>{const s=ms/1000,m=Math.floor(s/60);return m+':'+(s%60).toFixed(2).padStart(5,'0');};
+// Sound-Anzeige (zum Aufspüren störender Geräusche): jeder Effekt erscheint kurz oben rechts mit Name und Richtung
+function agSndLog(k,sp){if((AG_SET.sndlog??1)!==1)return;let el=document.getElementById('sndlog');if(!el){el=document.createElement('div');el.id='sndlog';document.body.appendChild(el);}
+  const d=document.createElement('div');d.textContent=k+(sp?' · '+(sp.dz>=0?'ahead ':'behind ')+Math.round(Math.abs(sp.dz)):'');el.prepend(d);while(el.children.length>6)el.lastChild.remove();setTimeout(()=>d.classList.add('off'),1800);setTimeout(()=>d.remove(),2400);}
 function agHitMsg(h,t,c,big){const el=h&&h.querySelector('.vzg-hit');if(!el)return;el.textContent=t;el.style.color=c;el.classList.toggle('big',!!big);el.classList.add('on');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('on'),big?2200:1100);}
 const agLive=g=>(g.opp||[]).filter(o=>!o.out);
 const agShip=(z,lat,x)=>Object.assign({en:1,z,lat,psi:0,vpsi:0,om:0,roll:0,spd:0,boost:0,slow:1,hitT:0,padK:-1,obK:-1,h:0,vy:0,air:false,spin:0},x||{});
@@ -376,6 +384,7 @@ function vizAgGame(v,ts,val){if(!v.agg)v.agg=agNew();const g=v.agg;g.best=g.best
     // Gummiband (Normalmodus): wer hinten liegt, holt auf (bis +24 %), wer weit vorn ist, lässt etwas nach (bis −12 %) – man kann sich trotzdem Vorsprung erarbeiten
     {const b0=o.sk0??(o.sk0=o.sk||1);let st=b0;if(racing){if(dz<-4)st=b0*(1+Math.min(.24,(-dz-4)*.0065));else if(dz>18)st=b0*(1-Math.min(.12,(dz-18)*.004));}o.sk=(o.sk||1)+(st-(o.sk||1))*(1-Math.exp(-dt/1.8));}
     if(Math.abs(dz)<1.4&&Math.abs(o.lat-g.lat)<.4&&racing&&!g.air&&!o.air){const pu=Math.sign(g.lat-o.lat||1);g.lat+=pu*.6*dt*6;o.lat-=pu*.6*dt*6;g.vpsi+=pu*.08;o.vpsi-=pu*.08;if(ts-(g.bumpT||0)>500){g.bumpT=ts;sf('bump');agBuzz(30);}}
+    {const pd=o.pdz??dz;if(racing&&Math.sign(pd)!==Math.sign(dz)&&Math.abs(o.lat-g.lat)<2.4&&ts-(o.psT||0)>1500){o.psT=ts;sfAt('pass',o.z+2.6,o.lat);}o.pdz=dz;}
     if(racing&&dz<0&&dz>-25&&Math.random()<dt*.02)g.shots.push({z:o.z+3.5,lat:o.lat,t:ts,tg:-1});}
   // Neonringe: beim Durchfliegen Klang und leichtes Zucken
   {const zl=agLz(g.z+2.6),pz=g.rzl??zl;if(racing&&zl>pz)for(const r of AG_RINGS)if(pz<r&&zl>=r){sf('ring');agBuzz(10);g.ringT=performance.now();}g.rzl=zl;}
@@ -438,6 +447,7 @@ function vizAgGame(v,ts,val){if(!v.agg)v.agg=agNew();const g=v.agg;g.best=g.best
   if(g.race&&g.st!=='count')for(const o of agLive(g)){const ln=Math.max(0,Math.min(AG_NL,Math.floor((o.z+2.6-AG_ZST)/AG_LAP)));if(ln>(o.lap||0)){o.laps=o.laps||[];o.laps.push(ts-(o.lapT||g.race));o.lapT=ts;o.lap=ln;if(ln>=AG_NL&&!o.fin)o.fin=ts-g.race;}}
   if(g.st==='done'){const res=hud.querySelector('.vzg-res');if(ts-g.t0>2200){if(res.hidden){res.hidden=false;mid.style.opacity=0;}if(ts-(g.resT||0)>300){g.resT=ts;agResDraw(g,res);}}}
   if(g.race&&racing)g.ghT=ts-g.race;
+  {const tg=Math.max(-.22,Math.min(.22,(g.u||0)*.13+(g.psi-g.vpsi)*.7));g.slipV=(g.slipV||0)+(tg-(g.slipV||0))*(1-Math.exp(-dt/(Math.abs(tg)>Math.abs(g.slipV||0)?.28:.45)));}
   // Solo: Abstand zum schnellsten Geist an deiner Stelle (− = du bist schneller)
   {const el=hud.querySelector('.vzg-gd'),G=v.ghost;if(g.solo&&G&&racing&&g.ghT>0){if(ts-(g.gdT||0)>100){g.gdT=ts;const f=G.f,n=f.length/6,z=g.z;let lo=0,hi=n-1;
       if(n>1&&z>=f[1]&&z<=f[(n-1)*6+1]){while(hi-lo>1){const m=(lo+hi)>>1;if(f[m*6+1]<=z)lo=m;else hi=m;}const k=(z-f[lo*6+1])/Math.max(1e-4,f[hi*6+1]-f[lo*6+1]),tg=f[lo*6]+(f[hi*6]-f[lo*6])*k,d=(g.ghT-tg)/1000;
@@ -465,7 +475,7 @@ function agPoseOf(z,lat,roll,hov,psi){const T=AGT_,{nz,cr,ad,mu}=agV;
   return {S0:ad(cS,mu(rr,lat),mu(uu,hov)),SF:F,SR:ad(mu(Ry,Math.cos(roll)),mu(uu,Math.sin(roll))),SUp:ad(mu(uu,Math.cos(roll)),mu(Ry,-Math.sin(roll))),fw,rr,uu};}
 function vizAgPose(v,val){const a=v.an,T=(performance.now()/1000)%3600;const B=0,DR=0;const {nz,cr,ad,mu}=agV;
   const g=v.agg||agNew();const boost=Math.max(g.boost,Math.max(0,Math.min(1,DR*1.25))*.5);
-  const zs=g.z+2.6,hov=.16+.012*Math.sin(T*2.7),P=agPoseOf(zs,g.lat,g.roll,hov+g.h,g.psi);
+  const zs=g.z+2.6,hov=.16+.012*Math.sin(T*2.7),P=agPoseOf(zs,g.lat,g.roll+(g.slipV||0)*.35,hov+g.h,g.psi+(g.slipV||0));
   const cp=(g.cps??g.psi)*.6,Fc=nz(ad(mu(P.fw,Math.cos(cp)),mu(P.rr,Math.sin(cp)))),uC=nz(ad(mu([0,1,0],.25),mu(P.uu,.75)));
   let ro=ad(P.S0,mu(Fc,-2.6-(g.camD||0)),mu(uC,.95-.15*(g.camD||0)),mu(P.uu,-g.h*.5)),ta=ad(P.S0,mu(Fc,7),mu(uC,.35)),up=uC;if(g.cam){ro=g.cam.ro;ta=g.cam.ta;up=g.cam.up;}
   {const sk=Math.min(1,g.shake||0)*.07,tt=performance.now()/1000;if(sk>0){ro=ad(ro,[Math.sin(tt*61)*sk,Math.sin(tt*53+1)*sk*.7,0]);ta=ad(ta,[Math.sin(tt*47+2)*sk*.5,Math.sin(tt*59)*sk*.4,0]);}}const cf=nz(ad(ta,mu(ro,-1))),cr2=nz(cr(up,cf)),cu=cr(cf,cr2);
@@ -842,7 +852,7 @@ function vizShipDraw(v,tgt,val){const gl=v.gl;let SP=null;try{SP=vizShipProg(v);
 // =====================================================================================================
 // einmalig (29.10.): alte Ranglisten, Bestzeiten und Geister löschen, damit der Geist ab jetzt sauber entsteht
 try{if(!localStorage.getItem('ag_reset1')){Object.keys(localStorage).filter(k=>/^(vz_ag_hs|vz_ag_best3|vz_ag_blap|ag_ghost)/.test(k)).forEach(k=>localStorage.removeItem(k));localStorage.setItem('ag_reset1','1');}}catch{}
-const AG_SET_DEF={trk:0,ship:0,ghost:1,ctrl:0,speed:1,curvy:1,width:1,steer:1,bank:1,glow:1,sky:1};
+const AG_SET_DEF={sndlog:1,trk:0,ship:0,ghost:1,ctrl:0,speed:1,curvy:1,width:1,steer:1,bank:1,glow:1,sky:1};
 // Spannweiten wie in VIZ (dort waren die Regler weiter als angegeben), Tempo bis zum Vierfachen
 const AG_SET_L=[['speed','Speed',.3,10,.05],['curvy','Curviness',.2,2.8,.01],['width','Track width',.6,2.1,.01],['bank','Banking',0,3.2,.01],['glow','Track lighting',0,3.2,.01],['sky','Dusk ↔ Night',0,1,.01],['steer','Opponents: steering accuracy',.3,3.2,.01]];
 let AG_SET=(()=>{try{return Object.assign({},AG_SET_DEF,JSON.parse(localStorage.getItem('ag_set')||'{}'));}catch{return Object.assign({},AG_SET_DEF);}})();
@@ -956,6 +966,7 @@ function agSetOpen(on){const el=$('set');if(!on){el.hidden=true;return;}
   el.innerHTML=`<div class="box"><h2>Settings</h2>
    <div class="seg"><span>Controls</span>${['Buttons','Tilt','Swipe'].map((n,i)=>`<button type="button" data-c="${i}" class="${Math.round(AG_SET.ctrl)===i?'on':''}">${n}</button>`).join('')}</div>
    <div class="seg"><span>Ghost (your best race)</span>${['Off','On'].map((n,i)=>`<button type="button" data-gh="${i}" class="${(AG_SET.ghost??1)===i?'on':''}">${n}</button>`).join('')}</div>
+   <div class="seg"><span>Show sound names</span>${['Off','On'].map((n,i)=>`<button type="button" data-sl="${i}" class="${(AG_SET.sndlog??1)===i?'on':''}">${n}</button>`).join('')}</div>
    <label>Effects volume<b>${Math.round(AG_FXV*100)} %</b><input type="range" data-fx="1" min="0" max="1" step="0.01" value="${AG_FXV}"></label>
    ${sl}
    <div class="row"><button type="button" data-a="def">Defaults</button><button type="button" data-a="upd">Check for update</button></div>
@@ -964,8 +975,8 @@ function agSetOpen(on){const el=$('set');if(!on){el.hidden=true;return;}
   el.hidden=false;}
 $('set').addEventListener('input',e=>{const t=e.target;if(t.dataset.k){AG_SET[t.dataset.k]=+t.value;t.previousElementSibling.textContent=(+t.value).toFixed(2);agSaveSet();}
   if(t.dataset.fx){AG_FXV=+t.value;t.previousElementSibling.textContent=Math.round(AG_FXV*100)+' %';try{localStorage.setItem('vz_ag_fxv',String(AG_FXV));}catch{}}});
-$('set').addEventListener('click',e=>{const gb=e.target.closest('[data-gh]');if(gb){AG_SET.ghost=+gb.dataset.gh;agSaveSet();agSetOpen(true);return;}const c=e.target.closest('[data-c]');if(c){AG_SET.ctrl=+c.dataset.c;agSaveSet();agSetOpen(true);return;}const a=e.target.dataset.a;
-  if(a==='close'||e.target.id==='set'){agSetOpen(false);}else if(a==='def'){const c0=AG_SET.ctrl;AG_SET=Object.assign({},AG_SET_DEF,{ctrl:c0,ship:AG_SET.ship,ghost:AG_SET.ghost,trk:AG_SET.trk});agSaveSet();agSetOpen(true);toast('Defaults restored');}
+$('set').addEventListener('click',e=>{const sl=e.target.closest('[data-sl]');if(sl){AG_SET.sndlog=+sl.dataset.sl;agSaveSet();agSetOpen(true);return;}const gb=e.target.closest('[data-gh]');if(gb){AG_SET.ghost=+gb.dataset.gh;agSaveSet();agSetOpen(true);return;}const c=e.target.closest('[data-c]');if(c){AG_SET.ctrl=+c.dataset.c;agSaveSet();agSetOpen(true);return;}const a=e.target.dataset.a;
+  if(a==='close'||e.target.id==='set'){agSetOpen(false);}else if(a==='def'){const c0=AG_SET.ctrl;AG_SET=Object.assign({},AG_SET_DEF,{ctrl:c0,ship:AG_SET.ship,ghost:AG_SET.ghost,trk:AG_SET.trk,sndlog:AG_SET.sndlog});agSaveSet();agSetOpen(true);toast('Defaults restored');}
   else if(a==='upd')checkUpdate(true);else if(a==='key')ghToken().then(ok=>{if(ok)checkUpdate(true);});});
 
 // ---- Updates aus dem GitHub-Repo (privat: braucht einen Schlüssel mit Lesezugriff)
