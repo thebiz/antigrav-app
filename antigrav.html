@@ -306,7 +306,7 @@ function agPause(v,on){const g=v.agg,pm=v.dlg.querySelector('.vz-game .vzg-pm');
     for(const L of [g.shots,g.mines,g.fx,g.burn||[],g.zaps||[]])for(const x of L)x.t+=d;if(g.quake)g.quake.t+=d;for(const o of [g,...g.opp])if(o.hitT)o.hitT+=d;if(g.bumpT)g.bumpT+=d;}}
 const agFmt=ms=>{const s=ms/1000,m=Math.floor(s/60);return m+':'+(s%60).toFixed(2).padStart(5,'0');};
 // Sound-Anzeige (zum Aufspüren störender Geräusche): jeder Effekt erscheint kurz oben rechts mit Name und Richtung
-function agSndLog(k,sp){if((AG_SET.sndlog??1)!==1)return;let el=document.getElementById('sndlog');if(!el){el=document.createElement('div');el.id='sndlog';document.body.appendChild(el);}
+function agSndLog(k,sp){if((AG_SET.snd2??0)!==1)return;let el=document.getElementById('sndlog');if(!el){el=document.createElement('div');el.id='sndlog';document.body.appendChild(el);}
   const d=document.createElement('div');d.textContent=k+(sp?' · '+(sp.dz>=0?'ahead ':'behind ')+Math.round(Math.abs(sp.dz)):'');el.prepend(d);while(el.children.length>6)el.lastChild.remove();setTimeout(()=>d.classList.add('off'),1800);setTimeout(()=>d.remove(),2400);}
 function agHitMsg(h,t,c,big){const el=h&&h.querySelector('.vzg-hit');if(!el)return;el.textContent=t;el.style.color=c;el.classList.toggle('big',!!big);el.classList.add('on');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('on'),big?2200:1100);}
 const agLive=g=>(g.opp||[]).filter(o=>!o.out);
@@ -387,7 +387,7 @@ function vizAgGame(v,ts,val){if(!v.agg)v.agg=agNew();const g=v.agg;g.best=g.best
     {const pd=o.pdz??dz;if(racing&&Math.sign(pd)!==Math.sign(dz)&&Math.abs(o.lat-g.lat)<2.4&&ts-(o.psT||0)>1500){o.psT=ts;sfAt('pass',o.z+2.6,o.lat);}o.pdz=dz;}
     if(racing&&dz<0&&dz>-25&&Math.random()<dt*.02)g.shots.push({z:o.z+3.5,lat:o.lat,t:ts,tg:-1});}
   // Neonringe: beim Durchfliegen Klang und leichtes Zucken
-  {const zl=agLz(g.z+2.6),pz=g.rzl??zl;if(racing&&zl>pz)for(const r of AG_RINGS)if(pz<r&&zl>=r){sf('ring');agBuzz(10);g.ringT=performance.now();}g.rzl=zl;}
+  {const zl=agLz(g.z+2.6),pz=g.rzl??zl;if(racing&&zl>pz)for(const r of AG_RINGS)if(pz<r&&zl>=r){g.ringT=performance.now();}g.rzl=zl;}
   // Waffen-Felder
   {const zz=g.z+2.6,wk=Math.floor((zz-17)/35),wz=(zz-17)/35-wk;if(agMd(wk,2)===0&&wz<.05&&!g.air&&Math.abs(g.lat-AGT_.wpx(wk))<.34&&wk!==g.wpK&&racing&&!g.wpn){g.wpK=wk;g.wpn=agPickW();sf('pick');try{agVib(12);}catch{}}}
   if(I.drop){I.drop=false;if(g.wpn){g.wpn=null;sf('drop');agBuzz([25,40,25]);}}
@@ -852,7 +852,7 @@ function vizShipDraw(v,tgt,val){const gl=v.gl;let SP=null;try{SP=vizShipProg(v);
 // =====================================================================================================
 // einmalig (29.10.): alte Ranglisten, Bestzeiten und Geister löschen, damit der Geist ab jetzt sauber entsteht
 try{if(!localStorage.getItem('ag_reset1')){Object.keys(localStorage).filter(k=>/^(vz_ag_hs|vz_ag_best3|vz_ag_blap|ag_ghost)/.test(k)).forEach(k=>localStorage.removeItem(k));localStorage.setItem('ag_reset1','1');}}catch{}
-const AG_SET_DEF={sndlog:1,trk:0,ship:0,ghost:1,ctrl:0,speed:1,curvy:1,width:1,steer:1,bank:1,glow:1,sky:1};
+const AG_SET_DEF={snd2:0,trk:0,ship:0,ghost:1,ctrl:0,speed:1,curvy:1,width:1,steer:1,bank:1,glow:1,sky:1};
 // Spannweiten wie in VIZ (dort waren die Regler weiter als angegeben), Tempo bis zum Vierfachen
 const AG_SET_L=[['speed','Speed',.3,10,.05],['curvy','Curviness',.2,2.8,.01],['width','Track width',.6,2.1,.01],['bank','Banking',0,3.2,.01],['glow','Track lighting',0,3.2,.01],['sky','Dusk ↔ Night',0,1,.01],['steer','Opponents: steering accuracy',.3,3.2,.01]];
 let AG_SET=(()=>{try{return Object.assign({},AG_SET_DEF,JSON.parse(localStorage.getItem('ag_set')||'{}'));}catch{return Object.assign({},AG_SET_DEF);}})();
@@ -966,7 +966,7 @@ function agSetOpen(on){const el=$('set');if(!on){el.hidden=true;return;}
   el.innerHTML=`<div class="box"><h2>Settings</h2>
    <div class="seg"><span>Controls</span>${['Buttons','Tilt','Swipe'].map((n,i)=>`<button type="button" data-c="${i}" class="${Math.round(AG_SET.ctrl)===i?'on':''}">${n}</button>`).join('')}</div>
    <div class="seg"><span>Ghost (your best race)</span>${['Off','On'].map((n,i)=>`<button type="button" data-gh="${i}" class="${(AG_SET.ghost??1)===i?'on':''}">${n}</button>`).join('')}</div>
-   <div class="seg"><span>Show sound names</span>${['Off','On'].map((n,i)=>`<button type="button" data-sl="${i}" class="${(AG_SET.sndlog??1)===i?'on':''}">${n}</button>`).join('')}</div>
+   <div class="seg"><span>Show sound names</span>${['Off','On'].map((n,i)=>`<button type="button" data-sl="${i}" class="${(AG_SET.snd2??0)===i?'on':''}">${n}</button>`).join('')}</div>
    <label>Effects volume<b>${Math.round(AG_FXV*100)} %</b><input type="range" data-fx="1" min="0" max="1" step="0.01" value="${AG_FXV}"></label>
    ${sl}
    <div class="row"><button type="button" data-a="def">Defaults</button><button type="button" data-a="upd">Check for update</button></div>
@@ -975,8 +975,8 @@ function agSetOpen(on){const el=$('set');if(!on){el.hidden=true;return;}
   el.hidden=false;}
 $('set').addEventListener('input',e=>{const t=e.target;if(t.dataset.k){AG_SET[t.dataset.k]=+t.value;t.previousElementSibling.textContent=(+t.value).toFixed(2);agSaveSet();}
   if(t.dataset.fx){AG_FXV=+t.value;t.previousElementSibling.textContent=Math.round(AG_FXV*100)+' %';try{localStorage.setItem('vz_ag_fxv',String(AG_FXV));}catch{}}});
-$('set').addEventListener('click',e=>{const sl=e.target.closest('[data-sl]');if(sl){AG_SET.sndlog=+sl.dataset.sl;agSaveSet();agSetOpen(true);return;}const gb=e.target.closest('[data-gh]');if(gb){AG_SET.ghost=+gb.dataset.gh;agSaveSet();agSetOpen(true);return;}const c=e.target.closest('[data-c]');if(c){AG_SET.ctrl=+c.dataset.c;agSaveSet();agSetOpen(true);return;}const a=e.target.dataset.a;
-  if(a==='close'||e.target.id==='set'){agSetOpen(false);}else if(a==='def'){const c0=AG_SET.ctrl;AG_SET=Object.assign({},AG_SET_DEF,{ctrl:c0,ship:AG_SET.ship,ghost:AG_SET.ghost,trk:AG_SET.trk,sndlog:AG_SET.sndlog});agSaveSet();agSetOpen(true);toast('Defaults restored');}
+$('set').addEventListener('click',e=>{const sl=e.target.closest('[data-sl]');if(sl){AG_SET.snd2=+sl.dataset.sl;agSaveSet();agSetOpen(true);return;}const gb=e.target.closest('[data-gh]');if(gb){AG_SET.ghost=+gb.dataset.gh;agSaveSet();agSetOpen(true);return;}const c=e.target.closest('[data-c]');if(c){AG_SET.ctrl=+c.dataset.c;agSaveSet();agSetOpen(true);return;}const a=e.target.dataset.a;
+  if(a==='close'||e.target.id==='set'){agSetOpen(false);}else if(a==='def'){const c0=AG_SET.ctrl;AG_SET=Object.assign({},AG_SET_DEF,{ctrl:c0,ship:AG_SET.ship,ghost:AG_SET.ghost,trk:AG_SET.trk,snd2:AG_SET.snd2});agSaveSet();agSetOpen(true);toast('Defaults restored');}
   else if(a==='upd')checkUpdate(true);else if(a==='key')ghToken().then(ok=>{if(ok)checkUpdate(true);});});
 
 // ---- Updates aus dem GitHub-Repo (privat: braucht einen Schlüssel mit Lesezugriff)
