@@ -9,7 +9,7 @@ input,textarea{-webkit-user-select:text!important;user-select:text!important}
 #app{position:fixed;inset:0}#cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
 button{font:inherit;color:inherit;cursor:pointer}
 #menu{position:fixed;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:0 22px calc(env(safe-area-inset-bottom) + 34px);background:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,0) 28%,rgba(0,0,0,0) 45%,rgba(0,0,0,.75))}
-#menu[hidden],#set[hidden],#dlg[hidden]{display:none}
+#menu{touch-action:none}#menu[hidden],#set[hidden],#dlg[hidden]{display:none}
 #menu h1{position:absolute;top:calc(env(safe-area-inset-top) + 9vh);left:0;right:0;margin:0;text-align:center;font-size:54px;font-weight:900;letter-spacing:.14em;font-style:italic;text-shadow:0 0 22px rgba(0,200,255,.85),0 0 4px rgba(0,200,255,.9)}
 #menu h1 span{color:#ff2e7a;text-shadow:0 0 22px rgba(255,40,120,.85),0 0 4px rgba(255,40,120,.9)}
 #menu .sub{position:absolute;top:calc(env(safe-area-inset-top) + 9vh + 70px);left:0;right:0;text-align:center;font-size:12px;letter-spacing:.3em;opacity:.6}
@@ -17,6 +17,8 @@ button{font:inherit;color:inherit;cursor:pointer}
 #mhs b{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;opacity:.6;margin-bottom:6px}#mhs table,#dlg table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}#mhs td,#dlg td{padding:3px 2px}#mhs td:last-child,#dlg td:last-child{text-align:right}#mhs td:first-child,#dlg td:first-child{color:#ffd84a;font-weight:800;width:18px}
 #menu .btn{width:min(100%,420px);padding:18px;border-radius:16px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.08);font-weight:700;font-size:17px;margin-top:10px;letter-spacing:.04em}
 #menu .btn.go{background:#ed682f;border-color:#ffb38a;font-size:20px;letter-spacing:.1em;box-shadow:0 0 26px rgba(237,104,47,.55)}#menu .two{display:flex;gap:10px;width:min(100%,420px)}#menu .two .btn{flex:1}
+#mship{display:flex;align-items:center;gap:10px;width:min(100%,420px);margin-bottom:8px}#mship>button{width:56px;height:56px;flex:none;border-radius:16px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.08);font-size:28px;line-height:1;font-weight:700;padding:0}
+#mship>div{flex:1;text-align:center}#mship b{display:block;font-size:11px;letter-spacing:.3em;opacity:.6;font-weight:600}#mship span{display:block;font-size:24px;font-weight:900;letter-spacing:.12em;font-style:italic;text-transform:uppercase;text-shadow:0 0 16px rgba(0,200,255,.6)}#mship i{display:block;font-style:normal;font-size:11px;opacity:.45;margin-top:1px;font-variant-numeric:tabular-nums}
 #menu .ver{margin-top:12px;font-size:11px;opacity:.45}#menu .cr{font-size:10px;opacity:.35;margin-top:4px;text-align:center}
 #set,#dlg{position:fixed;inset:0;z-index:8;background:rgba(4,5,8,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:18px}
 #set .box,#dlg .box{width:min(100%,440px);max-height:92vh;overflow:auto;background:rgba(14,16,22,.96);border:1px solid rgba(255,255,255,.14);border-radius:20px;padding:16px 18px}
@@ -30,16 +32,17 @@ button{font:inherit;color:inherit;cursor:pointer}
 <div id="app"><canvas id="cv"></canvas></div>
 <div id="menu"><h1>ANTI<span>GRAV</span></h1><div class="sub">ANTIGRAVITY RACING AT NIGHT</div>
  <div id="mhs"></div>
+ <div id="mship"><button type="button" id="mshp" aria-label="Previous ship">‹</button><div><b>SHIP</b><span id="mshn"></span><i id="mshi"></i></div><button type="button" id="mshx" aria-label="Next ship">›</button></div>
  <button type="button" class="btn go" id="mstart">START RACE</button>
  <div class="two"><button type="button" class="btn" id="mhsb">Leaderboard</button><button type="button" class="btn" id="mset">Settings</button></div>
- <div class="ver" id="mver"></div><div class="cr">Ship: “WipeOut – Feisar” by Nobby76, CC BY 4.0 · private use only</div></div>
+ <div class="ver" id="mver"></div><div class="cr" id="mcr"></div></div>
 <div id="set" hidden></div><div id="dlg" hidden></div><div id="toast"></div>
 <script>
 
 const NV=window.AgNative||{};
 const agVib=p=>{try{if(NV.vibrate){NV.vibrate(String([].concat(p).map(x=>Math.round(x)).join(',')));return;}navigator.vibrate&&navigator.vibrate(p);}catch{}};
 const AG_SKY_SRC="// Antigrav: Himmel (Strecke, Gleiter und Leuchteffekte werden danach als 3D-Modelle dr\u00fcbergezeichnet)\nuniform float AGZ,AGT,AGFV;uniform vec3 AGRO,AGTA,AGUP;vec3 SUN;\nvec3 sky(vec3 rd,bool full){float h=rd.y,nt=p_sky;float sd=max(0.,dot(rd,SUN));\n vec3 hor=mix(vec3(1.,.5,.26),vec3(.035,.04,.07),nt),top=mix(vec3(.12,.17,.36),vec3(.002,.003,.01),nt),mid=mix(vec3(.62,.32,.42),vec3(.012,.014,.03),nt);\n vec3 c=mix(hor,mid,smoothstep(.0,.12,h));c=mix(c,top,smoothstep(.1,.55,h));\n c+=vec3(1.,.6,.3)*pow(sd,10.)*.22*(1.-nt)+vec3(1.,.82,.55)*pow(sd,1400.)*5.*(1.-nt);\n // Nacht: Sterne, Mond, Milchstra\u00dfen-Schleier\n if(nt>.01&&h>-.02){vec2 sp=vec2(atan(rd.x,rd.z)*90.,h*160.);vec2 ci=floor(sp);float st=step(.985,hash(ci))*smoothstep(.0,.08,h);float tw=.6+.4*sin(AGT*(2.+hash(ci+3.)*4.)+hash(ci)*20.);\n  c+=vec3(.75,.8,1.)*st*tw*(.35+.65*hash(ci+7.))*nt*(1.-step(.5,length(fract(sp)-.5)*2.));\n  vec3 md=normalize(vec3(.5,.32,.8));float mo=dot(rd,md);c+=vec3(.85,.9,1.)*smoothstep(.9994,.9997,mo)*nt+vec3(.25,.3,.45)*pow(max(0.,mo),60.)*.25*nt;\n  c+=vec3(.05,.05,.09)*fbm(vec2(atan(rd.x,rd.z)*3.,h*6.)+3.)*smoothstep(.05,.4,h)*smoothstep(.9,.3,abs(rd.x-.3))*nt;}\n if(full&&h>.01){vec2 cu=rd.xz/(h+.06)*.55;float cl=fbm(cu*vec2(1.,3.)+vec2(0.,AGT*.01));cl=smoothstep(.5,.85,cl)*smoothstep(.01,.12,h)*(1.-smoothstep(.35,.7,h));\n  vec3 cc=mix(mix(vec3(1.,.55,.35),vec3(.03,.035,.06),nt),vec3(.95,.75,.6),pow(sd,3.)*(1.-nt));c=mix(c,cc*.9,cl*.75);}\n // Gebirgsketten: fern hell im Dunst, nah dunkler, Grate vom Abendlicht gestreift\n float an=atan(rd.x,rd.z);\n for(int k=0;k<3;k++){float fk=float(k);float fr=1.6+fk*1.7;\n  float mh=.015+.05*(1.-fk*.25)*fbm(vec2(an*fr+fk*7.3,fk*3.1))+.035*fk*noise(vec2(an*fr*3.,fk));mh-=.025*fk;\n  if(h<mh){float hz=.75-fk*.28;vec3 mc=mix(mix(vec3(.12,.08,.14),vec3(.004,.005,.01),nt),hor*.9,hz*(1.-nt*.6));\n   mc+=mix(vec3(1.,.55,.3),vec3(.2),nt)*smoothstep(mh-.006,mh,h)*pow(sd,2.)*.6*(1.-fk*.3);c=mc;}}\n // unter dem Horizont: Talnebel, Sonne spiegelt sich darin\n if(h<-.02){float fd=smoothstep(-.02,-.35,h);c=mix(c,mix(hor*.55,mix(vec3(.05,.05,.09),vec3(.01,.01,.02),nt),fd),smoothstep(-.02,-.06,h));\n  c+=vec3(1.,.6,.3)*pow(max(0.,dot(normalize(vec3(rd.x,-rd.y,rd.z)),SUN)),30.)*.3*(1.-nt)*(1.-fd);}\n return c;}\nvoid main(){vec2 c0=cuv();SUN=normalize(vec3(-.4,.07,1.));vec3 cf=normalize(AGTA-AGRO),cr=normalize(cross(AGUP,cf)),cu=cross(cf,cr);\n vec3 rd=normalize(cf*max(AGFV,.5)+cr*c0.x+cu*c0.y);vec3 col=sky(rd,true)*mix(1.,.4,p_sky);if(AGZ>99.)col=vec3(1.);\n col=(col*(2.51*col+.03))/(col*(2.43*col+.59)+.14);gl_FragColor=vec4(pow(clamp(col,0.,1.),vec3(.95)),1.);}\n";
-// ---------- Antigrav: echtes 3D-Modell des Gleiters (Datei viz-ship.bin, aus glTF umgepackt) ----------
+// ---------- Antigrav: echte 3D-Modelle der Gleiter (Dateien ship-*.bin, aus glTF umgepackt) ----------
 // Pose und Kamera werden exakt wie im Strecken-Shader gerechnet, das Modell wird danach mit Tiefenpuffer drübergezeichnet.
 const VZ_SHIP_VS=`precision highp float;attribute vec3 p,nn;attribute vec2 tc;uniform vec3 S0,SR,SU,SF,RO,CF,CR,CU;uniform float FOV,A,JET,ISJ;varying vec2 vt;varying vec3 vn,vw;
 void main(){vec3 q=p;if(ISJ>.5&&q.z<-.62)q.z=-.62+(q.z+.62)*JET;
@@ -62,9 +65,23 @@ void main(){vec4 tb=texture2D(TB,vt);vec3 alb=pow(tb.rgb,vec3(2.2));float lm=dot
  col+=vec3(.3,.7,1.)*SHL*(.4+.4*fr);
  col=(col*(2.51*col+.03))/(col*(2.43*col+.59)+.14);col=pow(clamp(col,0.,1.),vec3(.95));
  gl_FragColor=vec4(col,ADD>.5?1.:tb.a*ALP);}`;
-function vizShipLoad(v){const gl=v.gl;if(v.ship)return v.ship;const sh=v.ship={ok:false,prims:[],mats:[]};
-  fetch('viz-ship.bin').then(r=>{if(!r.ok)throw 0;return r.arrayBuffer();}).then(async buf=>{
-    const n=new DataView(buf).getUint32(0,true),j=JSON.parse(new TextDecoder().decode(new Uint8Array(buf,4,n))),base=4+n;
+// Alle Gleiter: gleiches Format, gleiche Länge (Nase vorn bei +z), eigene Düsenlage (eng = Höhe, z hinten)
+const AG_SHIPS=[
+ {id:'feisar',nm:'Feisar',cr:'“WipeOut – Feisar” by Nobby76, CC BY 4.0'},
+ {id:'qirex',nm:'Qirex',cr:'“WipeOut – Qirex” by Nobby76, CC BY 4.0'},
+ {id:'assegai',nm:'Assegai',cr:'“WipeOut – Assegai” by Nobby76, CC BY 4.0'},
+ {id:'apex',nm:'Apex',cr:'“Apex Wipeout Anti-grav Racer” by rafta, CC BY-NC 4.0'},
+ {id:'rhsx',nm:'RHS-X',cr:'“RHS-X” by Hassan Bassassi, CC BY 4.0'}];
+const agShipIx=i=>Math.max(0,Math.min(AG_SHIPS.length-1,Math.round(+i||0)));
+function vizShipProg(v){const gl=v.gl;if(v.shipPg)return v.shipPg;
+  const c=(t,src)=>{const s=gl.createShader(t);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));return s;};
+  const pg=gl.createProgram();gl.attachShader(pg,c(gl.VERTEX_SHADER,VZ_SHIP_VS));gl.attachShader(pg,c(gl.FRAGMENT_SHADER,VZ_SHIP_FS));
+  gl.bindAttribLocation(pg,0,'p');gl.bindAttribLocation(pg,1,'nn');gl.bindAttribLocation(pg,2,'tc');gl.linkProgram(pg);if(!gl.getProgramParameter(pg,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(pg));
+  const u={};['S0','SR','SU','SF','RO','CF','CR','CU','FOV','A','JET','ISJ','TB','TM','TE','HM','HE','EMF','ALP','MET','ROU','ADD','NT','BO','BB','SUN','TINT','SHL'].forEach(k=>u[k]=gl.getUniformLocation(pg,k));
+  return v.shipPg={pg,u};}
+function vizShipModel(v,i){const gl=v.gl;v.ships=v.ships||[];i=agShipIx(i);if(v.ships[i])return v.ships[i];const sh=v.ships[i]={ok:false,prims:[],mats:[],eng:[.155,-.74]};
+  fetch('ship-'+AG_SHIPS[i].id+'.bin').then(r=>{if(!r.ok)throw 0;return r.arrayBuffer();}).then(async buf=>{
+    const n=new DataView(buf).getUint32(0,true),j=JSON.parse(new TextDecoder().decode(new Uint8Array(buf,4,n))),base=4+n;if(j.eng)sh.eng=j.eng;
     const texs=await Promise.all(j.imgs.map(async im=>{const bmp=await createImageBitmap(new Blob([new Uint8Array(buf,base+im.off,im.len)],{type:im.mime}));
       const t=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,t);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,bmp);gl.generateMipmap(gl.TEXTURE_2D);
       gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
@@ -73,11 +90,7 @@ function vizShipLoad(v){const gl=v.gl;if(v.ship)return v.ship;const sh=v.ship={o
     for(const p of j.prims){const mk=(off,cnt)=>{const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(buf,base+off,cnt),gl.STATIC_DRAW);return b;};
       const ib=gl.createBuffer();gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,ib);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(buf,base+p.idx,p.ni),gl.STATIC_DRAW);
       sh.prims.push({pos:mk(p.pos,p.n*3),nrm:mk(p.nrm,p.n*3),uv:mk(p.uv,p.n*2),ib,ni:p.ni,mat:p.mat,jet:p.jet});}
-    const c=(t,src)=>{const s=gl.createShader(t);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));return s;};
-    const pg=gl.createProgram();gl.attachShader(pg,c(gl.VERTEX_SHADER,VZ_SHIP_VS));gl.attachShader(pg,c(gl.FRAGMENT_SHADER,VZ_SHIP_FS));
-    gl.bindAttribLocation(pg,0,'p');gl.bindAttribLocation(pg,1,'nn');gl.bindAttribLocation(pg,2,'tc');gl.linkProgram(pg);if(!gl.getProgramParameter(pg,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(pg));
-    sh.pg=pg;sh.u={};['S0','SR','SU','SF','RO','CF','CR','CU','FOV','A','JET','ISJ','TB','TM','TE','HM','HE','EMF','ALP','MET','ROU','ADD','NT','BO','BB','SUN','TINT','SHL'].forEach(k=>sh.u[k]=gl.getUniformLocation(pg,k));
-    sh.ok=true;}).catch(e=>{console.warn('[VIZ] Gleiter',e);sh.bad=true;});
+    sh.ok=true;}).catch(e=>{console.warn('[AntiGrav] Gleiter '+AG_SHIPS[i].id,e);sh.bad=true;});
   return sh;}
 // ---------- Antigrav als Spiel: Rennen gegen drei Gegner, echte Flugphysik (Nase lenken, Driften), Sprünge, Tunnel, Waffen ----------
 const AG_ZST=20,AG_LAP=700,AG_NL=3,AG_ZFI=AG_ZST+AG_NL*AG_LAP;
@@ -141,8 +154,6 @@ function agAudio(v){if(v.agA)return v.agA;let C=null;try{C=new (window.AudioCont
     else if(k==='boost'){noise(300,4000,.6,.5,'bandpass');}
     else if(k==='zap'){noise(7000,1500,.35,.7,'bandpass');tone(1800,300,.25,'square',.12);tone(90,60,.3,'sawtooth',.25);}
     else if(k==='wallon'){tone(60,140,1.,'sine',.8);noise(400,2500,1.,.3,'bandpass');}
-    else if(k==='roar'){noise(500,110,1.8,1.1);tone(95,48,1.7,'sawtooth',.35);tone(140,70,1.4,'square',.12);}
-    else if(k==='swipe'){noise(1400,160,.6,1.,'bandpass');tone(70,35,.5,'sine',.9);}
     else if(k==='ring'){tone(880,1760,.25,'triangle',.18);tone(1320,2640,.2,'sine',.1);noise(6000,2000,.15,.12,'highpass');}
     else if(k==='thump'){tone(130,32,.45,'sine',1.2);noise(5000,180,.4,.8,'bandpass');tone(70,30,.6,'triangle',.5);}
     else if(k==='quake'){noise(240,40,2.8,1.4);tone(48,26,2.6,'sine',1.);tone(70,30,1.8,'triangle',.5);}
@@ -216,7 +227,7 @@ function agResDraw(g,el){
     const inp=el.querySelector('input');['keydown','keyup','keypress'].forEach(t=>inp.addEventListener(t,e=>{e.stopPropagation();if(t==='keydown'&&e.key==='Enter'){e.preventDefault();el.querySelector('[data-r=hsok]').click();}}));
     setTimeout(()=>{try{inp.focus();const n=inp.value.length;inp.setSelectionRange(n,n);}catch{}},50);return;}
   if(g.view==='hs'){const H=agHS(),M=g.hsMine||{};const tb=(L,k,title)=>'<b class="vzg-hst">'+title+'</b><table>'+(L.length?L.map((e,i)=>'<tr'+(M[k]===i?' class="me"':'')+'><td>'+(i+1)+'</td><td>'+agEsc(e.n)+'</td><td>'+agFmt(e.t)+'</td></tr>').join(''):'<tr><td></td><td>no entries yet</td><td></td></tr>')+'</table>';
-    el.innerHTML='<h3>LEADERBOARD</h3>'+tb(H.race,'race','Race time')+tb(H.lap,'lap','Fastest lap')+'<div class="row"><button type="button" data-r="back">Back</button></div>';return;}const all=[g,...g.opp].map((o,i)=>({o,i,nm:AG_NM[i],col:i?'rgb('+o.tint.map(c=>Math.round(c*255)).join(',')+')':'#fff',fin:i?o.fin:g.fin,laps:(i?o.laps:g.laps)||[]}));
+    el.innerHTML='<h3>LEADERBOARD</h3>'+tb(H.race,'race','Race time')+tb(H.lap,'lap','Fastest lap')+'<div class="row"><button type="button" data-r="back">Back</button></div>';return;}const all=[g,...g.opp].map((o,i)=>({o,i,nm:AG_NM[i]+(AG_SHIPS[o.sm]?' · '+AG_SHIPS[o.sm].nm:''),col:i?'rgb('+o.tint.map(c=>Math.round(c*255)).join(',')+')':'#fff',fin:i?o.fin:g.fin,laps:(i?o.laps:g.laps)||[]}));
   all.sort((a,b)=>(a.fin&&b.fin)?a.fin-b.fin:a.fin?-1:b.fin?1:b.o.z-a.o.z);
   let bl=Infinity;for(const r of all)for(const l of r.laps)bl=Math.min(bl,l);
   const pl=all.findIndex(r=>r.i===0)+1;
@@ -234,7 +245,7 @@ function agIntroCam(g,u){const {nz,ad,mu}=agV,P=agPoseOf(g.z+2.6,g.lat,g.roll,.1
   const w=Math.max(0,Math.min(1,(u-.62)/.38)),ww=w*w*(3-2*w),tS=ad(P.S0,mu(P.fw,.25));
   return {ro,ta:ad(mu(tS,1-ww),mu(taE,ww)),up:nz(ad(mu(Y,1-ww),mu(uC,ww)))};}
 function agReplayStart(v){const g=v.agg;if(!g||!g.rec||g.rec.length<10)return;const hud=vizAgHud(v);hud.classList.add('rep');hud.querySelector('.vzg-rp').hidden=false;
-  const R={rep:true,real:g,fr:g.rec,t0:performance.now(),i:0,lt:performance.now(),ci:0,cT:performance.now(),z:0,lat:0,h:0,psi:0,roll:0,boost:0,cps:0,shield:0,opp:g.opp.map(o=>({tint:o.tint,ai:o.ai,z:0,lat:0,h:0,psi:0,roll:0,boost:0,spin:0})),shots:[],mines:[],fx:[],burn:[],quake:null,nfx:0,best:g.best,blap:g.blap};
+  const R={rep:true,real:g,fr:g.rec,t0:performance.now(),i:0,lt:performance.now(),ci:0,cT:performance.now(),z:0,lat:0,h:0,psi:0,roll:0,boost:0,cps:0,shield:0,sm:g.sm,opp:g.opp.map(o=>({tint:o.tint,ai:o.ai,sm:o.sm,z:0,lat:0,h:0,psi:0,roll:0,boost:0,spin:0})),shots:[],mines:[],fx:[],burn:[],quake:null,nfx:0,best:g.best,blap:g.blap};
   v.agg=R;}
 function agReplayEnd(v){const R=v.agg;if(!R||!R.rep)return;v.agg=R.real;v.agg.lt=performance.now();const hud=vizAgHud(v);hud.classList.remove('rep');hud.querySelector('.vzg-rp').hidden=true;}
 function agReplayStep(v,ts,R,hud,A,val){const now=performance.now(),rt=now-R.t0,F=R.fr;R.lt=ts;
@@ -270,8 +281,9 @@ function agPause(v,on){const g=v.agg,pm=v.dlg.querySelector('.vz-game .vzg-pm');
     for(const L of [g.shots,g.mines,g.fx,g.burn||[],g.zaps||[]])for(const x of L)x.t+=d;if(g.quake)g.quake.t+=d;for(const o of [g,...g.opp])if(o.hitT)o.hitT+=d;if(g.bumpT)g.bumpT+=d;}}
 const agFmt=ms=>{const s=ms/1000,m=Math.floor(s/60);return m+':'+(s%60).toFixed(2).padStart(5,'0');};
 const agShip=(z,lat,x)=>Object.assign({z,lat,psi:0,vpsi:0,om:0,roll:0,spd:0,boost:0,slow:1,hitT:0,padK:-1,obK:-1,h:0,vy:0,air:false,spin:0},x||{});
-function agNew(){const z0=AG_ZST-2.6;return Object.assign(agShip(z0,0),{st:'intro',t0:performance.now(),lt:performance.now(),race:0,wpn:null,wpK:-1,shield:0,flash:0,cdl:-1,
-  opp:[agShip(z0+3.2,-.5,{tint:[1,.25,.2]}),agShip(z0+6.4,.5,{tint:[.25,1,.45]}),agShip(z0+9.6,0,{tint:[.85,.35,1]})].map((o,i)=>Object.assign(o,{sk:.95+i*.03,ai:Math.random()*100})),
+function agOppShips(me){const o=AG_SHIPS.map((_,i)=>i).filter(i=>i!==me);for(let i=o.length-1;i>0;i--){const k=Math.floor(Math.random()*(i+1));[o[i],o[k]]=[o[k],o[i]];}return o;}
+function agNew(){const z0=AG_ZST-2.6,me=agShipIx(AG_SET.ship),os=agOppShips(me);return Object.assign(agShip(z0,0),{sm:me,st:'intro',t0:performance.now(),lt:performance.now(),race:0,wpn:null,wpK:-1,shield:0,flash:0,cdl:-1,
+  opp:[agShip(z0+3.2,-.5,{tint:[1,.25,.2]}),agShip(z0+6.4,.5,{tint:[.25,1,.45]}),agShip(z0+9.6,0,{tint:[.85,.35,1]})].map((o,i)=>Object.assign(o,{sk:.95+i*.03,ai:Math.random()*100,sm:os[i%os.length]})),
   shots:[],mines:[],fx:[],burn:[],walls:[],zaps:[],lap:0,laps:[],rec:[]});}
 function vizAgGame(v,ts,val){if(!v.agg)v.agg=agNew();const g=v.agg;g.best=g.best??+(localStorage.getItem('vz_ag_best3')||0);g.blap=g.blap??+(localStorage.getItem('vz_ag_blap')||0);
   AGT_.pc=val.curvy??1;AGT_.tw=2.4*(val.width??1);AGT_.bkf=val.bank??1;const TW=AGT_.tw,ML=TW-.3;
@@ -334,8 +346,6 @@ function vizAgGame(v,ts,val){if(!v.agg)v.agg=agNew();const g=v.agg;g.best=g.best
     {const b0=o.sk0??(o.sk0=o.sk||1);let st=b0;if(racing){if(dz<-4)st=b0*(1+Math.min(.24,(-dz-4)*.0065));else if(dz>18)st=b0*(1-Math.min(.12,(dz-18)*.004));}o.sk=(o.sk||1)+(st-(o.sk||1))*(1-Math.exp(-dt/1.8));}
     if(Math.abs(dz)<1.4&&Math.abs(o.lat-g.lat)<.4&&racing&&!g.air&&!o.air){const pu=Math.sign(g.lat-o.lat||1);g.lat+=pu*.6*dt*6;o.lat-=pu*.6*dt*6;g.vpsi+=pu*.08;o.vpsi-=pu*.08;if(ts-(g.bumpT||0)>500){g.bumpT=ts;sf('bump');agBuzz(30);}}
     if(racing&&dz<0&&dz>-25&&Math.random()<dt*.02)g.shots.push({z:o.z+3.5,lat:o.lat,t:ts,tg:-1});}
-  // Riesenechse: Brüllen beim Ausholen, Luftzug und Rütteln, wenn die Pranke hinter dir durchzieht
-  {const zl=agLz(g.z+2.6),d=zl-AG_KHZ,pd=g.kzd??d;if(racing){if(pd<-15&&d>=-15){sf('roar');agVib(40);}if(pd<3.5&&d>=3.5){sf('swipe');agVib([60,30,90]);g.shake=Math.max(g.shake||0,.9);agFlash(.12,'#88c8ff');}}g.kzd=d;}
   // Neonringe: beim Durchfliegen Klang und leichtes Zucken
   {const zl=agLz(g.z+2.6),pz=g.rzl??zl;if(racing&&zl>pz)for(const r of AG_RINGS)if(pz<r&&zl>=r){sf('ring');agBuzz(10);g.ringT=performance.now();}g.rzl=zl;}
   // Waffen-Felder
@@ -627,9 +637,9 @@ function agFxBuild(v,g,P,TT){const T=v.agT,out=T.fx,{ad,mu,nz}=agV;let n=0;const
   const hs=(a,b)=>{const x=Math.sin(a*127.1+b*311.7)*43758.5453;return x-Math.floor(x);};
   const bolt=(a,dir,len,seed,I,wd)=>{let p=a;for(let k=1;k<=5;k++){const f=k/5;const q=ad(a,mu(dir,len*f),[(hs(k,seed)-.5)*.4*(1-f*.8),(hs(k+7,seed)-.5)*.3*(1-f*.8),(hs(k+3,seed+1)-.5)*.4*(1-f*.8)]);Q(p,q,wd||.022,3,[.8,.9,1],2.6*I);Q(p,q,.13,3,[.35,.55,1],.35*I);p=q;}};
   // Triebwerke aller Gleiter: Abgasstrahl, Glühen, Licht
-  const ships=[];if(!(g.cam&&g.cam.hide))ships.push({S0:P.S0,SF:P.SF,SUp:P.SUp,SR:P.SR,b:g.boost||0,me:1});
-  const TS=(performance.now()/1000)%3600;for(const o of g.opp||[]){const d=o.z-g.z;if(d<(g.rep?-30:-8)||d>80)continue;const q=agPoseOf(o.z+2.6,o.lat,o.roll,.16+.012*Math.sin(TS*2.7+(o.ai||0))+o.h,o.psi);ships.push({S0:q.S0,SF:q.SF,SUp:q.SUp,SR:q.SR,b:o.boost||0});}
-  for(const s of ships){const O=ad(s.S0,mu(s.SF,-.74),mu(s.SUp,.155))   /* Düsenmitte laut Modell: hinten bei z −0,74, Höhe 0,155 */,b=Math.min(1.6,s.b),fl=.85+.15*Math.sin(now*.05+s.S0[2]);
+  const ships=[];if(!(g.cam&&g.cam.hide))ships.push({sm:g.sm,S0:P.S0,SF:P.SF,SUp:P.SUp,SR:P.SR,b:g.boost||0,me:1});
+  const TS=(performance.now()/1000)%3600;for(const o of g.opp||[]){const d=o.z-g.z;if(d<(g.rep?-30:-8)||d>80)continue;const q=agPoseOf(o.z+2.6,o.lat,o.roll,.16+.012*Math.sin(TS*2.7+(o.ai||0))+o.h,o.psi);ships.push({sm:o.sm,S0:q.S0,SF:q.SF,SUp:q.SUp,SR:q.SR,b:o.boost||0});}
+  for(const s of ships){const en=((v.ships||[])[s.sm||0]||{}).eng||[.155,-.74],O=ad(s.S0,mu(s.SF,en[1]+.01),mu(s.SUp,en[0]))   /* Düsenmitte laut Modell (je Gleiter) */,b=Math.min(1.6,s.b),fl=.85+.15*Math.sin(now*.05+s.S0[2]);
     const bb=Math.min(1,b),len=(.4+.5*bb)*fl,E=ad(O,mu(s.SF,-len)),E2=ad(O,mu(s.SF,-len*1.7));
     Q(O,E,.045+.012*bb,4,bb>.3?[.75,.95,1]:[.8,.7,1],1.3+.7*bb);Q(O,E2,.11+.03*bb,4,bb>.3?[.2,.7,1]:[.45,.25,1],.4+.3*bb);spr(O,.18+.05*bb,[.6,.45,1],.8+.5*bb);
     light(ad(O,mu(s.SUp,-.02),mu(s.SF,-.25)),mu(b>.3?[.3,.75,1]:[.55,.35,1],.9+1.6*b),2.2,s.me?9:2);}
@@ -691,80 +701,20 @@ function vizAgFx(v,P){const gl=v.gl,T=v.agT,FX=v.agFX;if(!T||T.bad||!FX||!FX.n)r
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,T.fi);gl.drawElements(gl.TRIANGLES,FX.n*6,gl.UNSIGNED_SHORT,0);
   for(let i=1;i<4;i++)gl.disableVertexAttribArray(i);gl.depthMask(true);gl.disable(gl.BLEND);}
 
-// ---------- Riesenechse an der Sprungstelle: eigene Figur (kein Nachbau), steht neben der Strecke,
-// holt aus, wenn du anfliegst, und wischt mit der Pranke knapp hinter dir über die Lücke
-const AG_KZ=440,AG_KHZ=421;   // Echse steht breitbeinig über der Bahn hinter dem Sprung (410–417); die Pranke kreuzt die Bahn bei 413,5
-const AG_KVS=`precision highp float;attribute vec3 p,nn;uniform mat4 M;uniform vec3 SCL;uniform vec3 RO,CF,CR,CU;uniform float FOV,A;varying vec3 vw,vn,vl;
-void main(){vec4 w=M*vec4(p,1.);vw=w.xyz;vn=mat3(M)*(nn/(SCL*SCL));vl=p*SCL;vec3 v=w.xyz-RO;float z=dot(v,CF);const float n=.1,f=220.;gl_Position=vec4(dot(v,CR)*FOV*2./A,dot(v,CU)*FOV*2.,(f+n)/(f-n)*z-2.*f*n/(f-n),z);}`;
-const AG_KFS=`precision highp float;varying vec3 vw,vn,vl;uniform vec3 RO,COL,EMI;
-void main(){vec3 n=normalize(vn);vec3 rd=normalize(vw-RO);if(dot(n,rd)>0.)n=-n;float rim=pow(1.-max(0.,dot(n,-rd)),3.);
- float sc=.82+.18*smoothstep(-.3,.3,sin(vl.x*5.+sin(vl.y*4.)*1.5)*sin(vl.z*5.+vl.y*2.5));
- vec3 col=COL*sc*(.035+.12*max(0.,n.y)+.22*max(0.,-n.y))+mix(vec3(.08,.5,1.),vec3(1.,.1,.45),smoothstep(.1,-.6,n.y)*.7)*rim*.9*(.75+.25*sc)+EMI;
- float t=length(vw-RO);col=mix(vec3(.004),col,exp(-t*.007));
- col=(col*(2.51*col+.03))/(col*(2.43*col+.59)+.14);gl_FragColor=vec4(pow(clamp(col,0.,1.),vec3(.95)),1.);}`;
-function agKaiju(v){const gl=v.gl;if(v.kai)return v.kai;
-  try{const pr=agMkProg(gl,AG_KVS,AG_KFS,['p','nn']);const V=[],I=[],NA=12,NO=18;
-    for(let i=0;i<=NA;i++){const th=Math.PI*i/NA;for(let j=0;j<=NO;j++){const ph=2*Math.PI*j/NO,x=Math.sin(th)*Math.cos(ph),y=Math.cos(th),z=Math.sin(th)*Math.sin(ph);V.push(x,y,z,x,y,z);}}
-    for(let i=0;i<NA;i++)for(let j=0;j<NO;j++){const a=i*(NO+1)+j,b=a+NO+1;I.push(a,b,a+1,a+1,b,b+1);}
-    const vb=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,vb);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(V),gl.STATIC_DRAW);
-    const ib=gl.createBuffer();gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,ib);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(I),gl.STATIC_DRAW);
-    v.kai={pr,vb,ib,ni:I.length};}catch(e){dl('Echse: '+e.message);v.kai={bad:true};}
-  return v.kai;}
-const agSm=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x);};
-// Armwinkel aus dem Abstand des Spielers zur Pranke: ausholen, durchziehen (kreuzt die Bahn rund 4–5 Einheiten hinter dir), zurück
-function agKaiPose(d,T){const ph0=2.25+.05*Math.sin(T*1.3),ps0=.25;
-  if(d<-16||d>34)return {phi:ph0,psi:ps0,jaw:.08+.04*Math.sin(T*2)};
-  if(d<-2){const u=agSm((d+16)/14);return {phi:ph0+(.55-ph0)*u,psi:ps0+(.95-ps0)*u,jaw:.08+.55*u};}
-  if(d<6){const u=(d+2)/8;return {phi:.55+1.6*agSm(Math.min(1,u*1.6)),psi:.95-1.9*agSm(u),jaw:.63};}
-  const u=agSm((d-6)/28);return {phi:2.15+(ph0-2.15)*u,psi:-.95+(ps0+.95)*u,jaw:.63-.55*u};}
-function agKaijuDraw(v,P,g){const K=agKaiju(v);if(!K||K.bad||!g)return;const gl=v.gl,T=performance.now()/1000;
-  const cz=P.ro[2],zc=AG_KZ+700*Math.round((cz-AG_KZ)/700);if(zc-cz>200||cz-zc>40)return;
-  const {nz,cr,ad,mu}=agV,Fr=agFrame(zc),Y=[0,1,0],Zm=nz([-Fr.fw[0],0,-Fr.fw[2]]),Xm=cr(Y,Zm),O=ad(Fr.c,[0,-6,0]),SC=1.25;
-  const W=a=>ad(mu(Xm,a[0]),mu(Y,a[1]),mu(Zm,a[2]));
-  const pose=agKaiPose(g.z+2.6-(AG_KHZ+(zc-AG_KZ)),T);
-  const u=K.pr.u;gl.useProgram(K.pr.pg);const s3=(k,x)=>gl.uniform3f(u[k],x[0],x[1],x[2]);s3('RO',P.ro);s3('CF',P.cf);s3('CR',P.cr);s3('CU',P.cu);gl.uniform1f(u.FOV,P.fov);gl.uniform1f(u.A,innerWidth/innerHeight);
-  gl.bindBuffer(gl.ARRAY_BUFFER,K.vb);gl.enableVertexAttribArray(0);gl.enableVertexAttribArray(1);gl.vertexAttribPointer(0,3,gl.FLOAT,false,24,0);gl.vertexAttribPointer(1,3,gl.FLOAT,false,24,12);gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,K.ib);
-  gl.enable(gl.DEPTH_TEST);gl.depthMask(true);gl.disable(gl.BLEND);
-  const M=new Float32Array(16);
-  // Kasten: Mitte c (Figur-Raum, vor der Skalierung), halbe Maße h, Achsen ax,ay,az (Figur-Raum), Farbe und Leuchten
-  const box=(c,h,ax,ay,az,col,emi)=>{const X=W(ax),Yy=W(ay),Z=W(az),C=ad(O,mu(W(c),SC));const hx=h[0]*SC,hy=h[1]*SC,hz=h[2]*SC;M.set([X[0]*hx,X[1]*hx,X[2]*hx,0,Yy[0]*hy,Yy[1]*hy,Yy[2]*hy,0,Z[0]*hz,Z[1]*hz,Z[2]*hz,0,C[0],C[1],C[2],1]);
-    gl.uniformMatrix4fv(u.M,false,M);s3('SCL',[hx,hy,hz]);s3('COL',col||[.5,.55,.5]);s3('EMI',emi||[0,0,0]);gl.drawElements(gl.TRIANGLES,K.ni,gl.UNSIGNED_SHORT,0);};
-  const AX=[1,0,0],AY=[0,1,0],AZ=[0,0,1],rx=a=>[[1,0,0],[0,Math.cos(a),Math.sin(a)],[0,-Math.sin(a),Math.cos(a)]],rz=a=>[[Math.cos(a),Math.sin(a),0],[-Math.sin(a),Math.cos(a),0],[0,0,1]];
-  const B=(c,h,rot,col,emi)=>{const R=rot||[AX,AY,AZ];box(c,h,R[0],R[1],R[2],col,emi);};
-  const skin=[.42,.5,.44],dark=[.3,.34,.32];
-  // breitbeinig über der Bahn: Beine außen neben den Leitplanken, du fliegst darunter durch
-  for(const sx of [-1,1]){B([sx*4.4,6.6,-.6],[1.9,3.3,2.2],rz(sx*.25),skin);B([sx*5.3,2.7,0],[1.3,2.8,1.5],rz(sx*.12),skin);B([sx*5.6,.5,1.2],[1.5,.55,2.2],null,dark);
-    for(const o of [-.7,0,.7])B([sx*5.6+o,.35,3.2],[.22,.3,.6],null,[.75,.75,.65]);}
-  B([0,9.6,-.6],[3.9,2.7,3],null,skin);B([0,13.2,.3],[3.1,3.7,2.6],rx(-.25),skin);B([0,12.6,2.2],[2.2,2.9,1.2],rx(-.2),[.55,.58,.5]);
-  B([0,16.6,1.5],[1.9,2.0,1.9],rx(-.45),skin);B([0,18.6,3.0],[1.6,1.35,2.5],rx(.08),skin);B([0,18.3,5.2],[1.15,.75,1.5],null,skin);
-  for(const sx of [-1,1])B([sx*.95,19.55,3.6],[.45,.2,.6],null,dark);
-  {const j=pose.jaw;B([0,17.4-Math.sin(j)*1.1,4.5],[1.05,.42,1.9],rx(j),dark);for(const o of [-.6,-.2,.2,.6])B([o,17.85-Math.sin(j)*.4,5.6],[.08,.22,.08],null,[.9,.9,.8],[.08,.08,.06]);}
-  const eg=.8+.2*Math.sin(T*3);for(const sx of [-1,1])B([sx*1.05,19.15,4.0],[.26,.18,.22],null,[0,0,0],[1.8*eg,.5*eg,.06]);
-  {const tl=[[0,8.3,-4.2,2.4,2.0,3.0,.25],[0,6.6,-8.3,1.8,1.5,2.8,.3],[0,4.8,-12,1.3,1.1,2.6,.3],[0,3.2,-15.5,.9,.8,2.4,.25],[0,2,-18.6,.55,.5,2.1,.2]];
-   const sw=Math.sin(T*.9)*.6;tl.forEach((t,i)=>B([t[0]+sw*i*.4,t[1],t[2]],[t[3],t[4],t[5]],rx(t[6]),i>3?dark:skin));}
-  // leuchtende Rückenplatten entlang Rücken und Schwanz
-  {const sp=[[19.2,.6,1.0],[17.6,-.6,1.3],[15.9,-1.6,1.6],[14.1,-2.3,1.8],[12.2,-2.8,1.8],[10.4,-3.2,1.6],[8.9,-4.4,1.4],[7.7,-7.2,1.1],[6.2,-10.4,.85],[4.7,-13.6,.6]];
-   sp.forEach(([y,z,hh],i)=>{const g2=.55+.45*Math.sin(T*2.6-i*.55);B([0,y+hh*.7,z],[.16,hh,.75],rx(-.5),[.08,.1,.1],[.12*g2,.6*g2,1.5*g2]);});}
-  // Arme: phi = von oben nach vorn-unten, psi = seitlich (positiv nach außen, negativ quer über die Bahn)
-  const arm=(sx,phi,psi)=>{const a=nz([sx*Math.sin(phi)*Math.sin(psi),Math.cos(phi),Math.sin(phi)*Math.cos(psi)]);let c=cr(a,[0,1,0]);if(Math.hypot(...c)<.1)c=cr(a,[1,0,0]);c=nz(c);const b=cr(c,a);
-    const S=[sx*3.9,14.4,1.3],at=k=>[S[0]+a[0]*k,S[1]+a[1]*k,S[2]+a[2]*k];
-    box(at(3.8),[1.05,4.2,1.05],b,a,c,skin);box(at(11.4),[.85,4.1,.85],b,a,c,skin);box(at(15.8),[1.0,1.0,.7],b,a,c,dark);for(const o of [-.6,0,.6]){const t=at(17.3);box([t[0]+b[0]*o,t[1]+b[1]*o,t[2]+b[2]*o],[.2,1.2,.26],b,a,c,[.8,.8,.7],[.06,.06,.05]);}};
-  arm(1,pose.phi,pose.psi);arm(-1,2.2+.06*Math.sin(T*1.1),.3);
-  gl.disableVertexAttribArray(1);}
-function vizShipDraw(v,tgt,val){const gl=v.gl,sh=vizShipLoad(v);const P=vizAgPose(v,val),u=sh.u;
+function vizShipDraw(v,tgt,val){const gl=v.gl;let SP=null;try{SP=vizShipProg(v);}catch(e){if(!v.shipErr){v.shipErr=1;dl('Gleiter-Shader: '+e.message);}}AG_SHIPS.forEach((_,i)=>vizShipModel(v,i));const P=vizAgPose(v,val),u=SP&&SP.u;
   if(tgt.f&&(!tgt.db||tgt.dbw!==tgt.w||tgt.dbh!==tgt.h)){if(!tgt.db)tgt.db=gl.createRenderbuffer();gl.bindRenderbuffer(gl.RENDERBUFFER,tgt.db);gl.renderbufferStorage(gl.RENDERBUFFER,gl.DEPTH_STENCIL,tgt.w,tgt.h);tgt.dbw=tgt.w;tgt.dbh=tgt.h;
     gl.bindFramebuffer(gl.FRAMEBUFFER,tgt.f);gl.framebufferRenderbuffer(gl.FRAMEBUFFER,gl.DEPTH_STENCIL_ATTACHMENT,gl.RENDERBUFFER,tgt.db);}
   gl.bindFramebuffer(gl.FRAMEBUFFER,tgt.f);gl.viewport(0,0,tgt.w,tgt.h);gl.depthMask(true);gl.clear(gl.DEPTH_BUFFER_BIT);gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);
-  vizAgScene(v,tgt,val,P);agKaijuDraw(v,P,v.agg);gl.enable(gl.DEPTH_TEST);
-  if(sh.ok){gl.useProgram(sh.pg);const f3=(k,x)=>gl.uniform3f(u[k],x[0],x[1],x[2]);
+  vizAgScene(v,tgt,val,P);gl.enable(gl.DEPTH_TEST);
+  if(SP){gl.useProgram(SP.pg);const f3=(k,x)=>gl.uniform3f(u[k],x[0],x[1],x[2]);
   f3('S0',P.S0);f3('SR',P.SR);f3('SU',P.SUp);f3('SF',P.SF);f3('RO',P.ro);f3('CF',P.cf);f3('CR',P.cr);f3('CU',P.cu);
   const sn=[-.4,.07,1],sl=Math.hypot(...sn);gl.uniform3f(u.SUN,sn[0]/sl,sn[1]/sl,sn[2]/sl);
   gl.uniform1f(u.FOV,P.fov);gl.uniform1f(u.A,innerWidth/innerHeight);gl.uniform1f(u.JET,.4+.9*P.B+1.8*P.boost);gl.uniform1f(u.NT,val.sky??0);gl.uniform1f(u.BO,P.boost);gl.uniform1f(u.BB,0);
   gl.uniform1i(u.TB,0);gl.uniform1i(u.TM,1);gl.uniform1i(u.TE,2);
   gl.enableVertexAttribArray(0);gl.enableVertexAttribArray(1);gl.enableVertexAttribArray(2);
-  const agTn=z=>{const t=agLz(z)%350;return t>=159&&t<=246;};const g=v.agg,T=(performance.now()/1000)%3600,ships=g&&g.cam&&(g.cam.hide||(g.cam.top&&agTn(g.z+2.6)))?[]:[{S0:P.S0,SR:P.SR,SUp:P.SUp,SF:P.SF,tint:[1,1,1],jet:.4+.9*P.B+1.8*P.boost,sh:g&&g.shield>0}];
-  if(g)for(const o of g.opp){const d=o.z-g.z;if(d<(g.rep?-30:-6)||d>70)continue;if(g.cam&&g.cam.top&&agTn(o.z+2.6))continue;const q=agPoseOf(o.z+2.6,o.lat,o.roll+(o.spin>0?o.spin*9:0),.16+.012*Math.sin(T*2.7+o.ai)+o.h,o.psi);ships.push({S0:q.S0,SR:q.SR,SUp:q.SUp,SF:q.SF,tint:o.tint,jet:.5+1.6*o.boost});}
-  for(const sp of ships){f3('S0',sp.S0);f3('SR',sp.SR);f3('SU',sp.SUp);f3('SF',sp.SF);gl.uniform3f(u.TINT,...sp.tint);gl.uniform1f(u.JET,sp.jet);gl.uniform1f(u.SHL,sp.sh?1:0);
+  const agTn=z=>{const t=agLz(z)%350;return t>=159&&t<=246;};const g=v.agg,T=(performance.now()/1000)%3600,ships=g&&g.cam&&(g.cam.hide||(g.cam.top&&agTn(g.z+2.6)))?[]:[{sm:g?g.sm:agShipIx(AG_SET.ship),S0:P.S0,SR:P.SR,SUp:P.SUp,SF:P.SF,tint:[1,1,1],jet:.4+.9*P.B+1.8*P.boost,sh:g&&g.shield>0}];
+  if(g)for(const o of g.opp){const d=o.z-g.z;if(d<(g.rep?-30:-6)||d>70)continue;if(g.cam&&g.cam.top&&agTn(o.z+2.6))continue;const q=agPoseOf(o.z+2.6,o.lat,o.roll+(o.spin>0?o.spin*9:0),.16+.012*Math.sin(T*2.7+o.ai)+o.h,o.psi);ships.push({sm:o.sm,S0:q.S0,SR:q.SR,SUp:q.SUp,SF:q.SF,tint:[1,1,1],jet:.5+1.6*o.boost});}   // jeder Gegner mit eigenem Gleiter in Originalfarben
+  for(const sp of ships){const sh=vizShipModel(v,sp.sm||0);if(!sh.ok)continue;f3('S0',sp.S0);f3('SR',sp.SR);f3('SU',sp.SUp);f3('SF',sp.SF);gl.uniform3f(u.TINT,...sp.tint);gl.uniform1f(u.JET,sp.jet);gl.uniform1f(u.SHL,sp.sh?1:0);
   for(const pass of [0,1,2])for(const p of sh.prims){const m=sh.mats[p.mat];const add=m.name==='Glow'||m.name==='Boost';const ps=add?2:m.blend?1:0;if(ps!==pass)continue;
     if(pass===0){gl.disable(gl.BLEND);gl.depthMask(true);}else if(pass===1){gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);}else{gl.enable(gl.BLEND);gl.blendFunc(gl.ONE,gl.ONE);gl.depthMask(false);}
     gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,m.tb);gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,m.tm||m.tb);gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,m.te||m.tb);gl.activeTexture(gl.TEXTURE0);
@@ -778,7 +728,7 @@ function vizShipDraw(v,tgt,val){const gl=v.gl,sh=vizShipLoad(v);const P=vizAgPos
 // =====================================================================================================
 // AntiGrav – eigene App. Ab hier: Grundgerüst (Bildschleife, Himmel, Nachbearbeitung, Menü, Einstellungen, Updates)
 // =====================================================================================================
-const AG_SET_DEF={ctrl:0,speed:1,curvy:1,width:1,steer:1,bank:1,glow:1,sky:1};
+const AG_SET_DEF={ship:0,ctrl:0,speed:1,curvy:1,width:1,steer:1,bank:1,glow:1,sky:1};
 // Spannweiten wie in VIZ (dort waren die Regler weiter als angegeben), Tempo bis zum Vierfachen
 const AG_SET_L=[['speed','Speed',.3,10,.05],['curvy','Curviness',.2,2.8,.01],['width','Track width',.6,2.1,.01],['bank','Banking',0,3.2,.01],['glow','Track lighting',0,3.2,.01],['sky','Dusk ↔ Night',0,1,.01],['steer','Opponents: steering accuracy',.3,3.2,.01]];
 let AG_SET=(()=>{try{return Object.assign({},AG_SET_DEF,JSON.parse(localStorage.getItem('ag_set')||'{}'));}catch{return Object.assign({},AG_SET_DEF);}})();
@@ -872,6 +822,14 @@ function agHSFull(){const H=agHS();const f=(L,t)=>`<b class="sh">${t}</b><table>
   agDlg('Leaderboard',f(H.race,'Race time')+f(H.lap,'Fastest lap'),[['Reset',()=>{agDlg('Clear leaderboard?','All entries in both lists will be deleted.',[['Delete',()=>{try{localStorage.removeItem('vz_ag_hs');}catch{}agMenuHS();toast('Leaderboard cleared');}],['Cancel',null]]);return false;}],['Close',null]]);}
 function agDlg(title,html,btns){const d=$('dlg');d.innerHTML=`<div class="box"><h2>${title}</h2><div class="bd">${html}</div><div class="row">${btns.map((b,i)=>`<button type="button" data-i="${i}"${i===0&&btns.length>1?' class="pri"':''}>${b[0]}</button>`).join('')}</div></div>`;
   d.hidden=false;d.onclick=e=>{const b=e.target.closest('[data-i]');if(!b){if(e.target===d)d.hidden=true;return;}const fn=btns[+b.dataset.i][1];const r=fn?fn(d):undefined;if(r!==false)d.hidden=true;};}
+// Gleiterwahl: Pfeile oder Wischen über den Menühintergrund; die Kamera kreist um den gewählten Gleiter
+function agShipUI(){const i=agShipIx(AG_SET.ship),S=AG_SHIPS[i];$('mshn').textContent=S.nm;$('mshi').textContent=(i+1)+' / '+AG_SHIPS.length;$('mcr').textContent='Ship: '+S.cr+' · private use only';}
+function agShipSet(d){AG_SET.ship=(agShipIx(AG_SET.ship)+d+AG_SHIPS.length)%AG_SHIPS.length;agSaveSet();if(v.agg&&v.state!=='game'){const b=v.agg.best,bl=v.agg.blap;v.agg=agNew();v.agg.best=b;v.agg.blap=bl;}agShipUI();agVib(8);}
+$('mshp').onclick=()=>agShipSet(-1);$('mshx').onclick=()=>agShipSet(1);
+{let sx=null,sy=0;const m=$('menu');m.addEventListener('pointerdown',e=>{sx=e.target.closest('button')?null:e.clientX;sy=e.clientY;});
+ m.addEventListener('pointerup',e=>{if(sx===null)return;const dx=e.clientX-sx,dy=e.clientY-sy;sx=null;if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)*1.3)agShipSet(dx<0?1:-1);});
+ m.addEventListener('pointercancel',()=>{sx=null;});}
+agShipUI();
 $('mstart').onclick=agStart;$('mhsb').onclick=agHSFull;$('mset').onclick=()=>agSetOpen(true);
 $('mver').textContent='Version '+(+(NV.buildNr?.()||0)||'Browser');agMenuHS();
 
@@ -889,7 +847,7 @@ function agSetOpen(on){const el=$('set');if(!on){el.hidden=true;return;}
 $('set').addEventListener('input',e=>{const t=e.target;if(t.dataset.k){AG_SET[t.dataset.k]=+t.value;t.previousElementSibling.textContent=(+t.value).toFixed(2);agSaveSet();}
   if(t.dataset.fx){AG_FXV=+t.value;t.previousElementSibling.textContent=Math.round(AG_FXV*100)+' %';try{localStorage.setItem('vz_ag_fxv',String(AG_FXV));}catch{}}});
 $('set').addEventListener('click',e=>{const c=e.target.closest('[data-c]');if(c){AG_SET.ctrl=+c.dataset.c;agSaveSet();agSetOpen(true);return;}const a=e.target.dataset.a;
-  if(a==='close'||e.target.id==='set'){agSetOpen(false);}else if(a==='def'){const c0=AG_SET.ctrl;AG_SET=Object.assign({},AG_SET_DEF,{ctrl:c0});agSaveSet();agSetOpen(true);toast('Defaults restored');}
+  if(a==='close'||e.target.id==='set'){agSetOpen(false);}else if(a==='def'){const c0=AG_SET.ctrl;AG_SET=Object.assign({},AG_SET_DEF,{ctrl:c0,ship:AG_SET.ship});agSaveSet();agSetOpen(true);toast('Defaults restored');}
   else if(a==='upd')checkUpdate(true);else if(a==='key')ghToken().then(ok=>{if(ok)checkUpdate(true);});});
 
 // ---- Updates aus dem GitHub-Repo (privat: braucht einen Schlüssel mit Lesezugriff)
