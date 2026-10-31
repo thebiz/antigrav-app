@@ -929,8 +929,13 @@ const AG_SKY_FS='precision highp float;varying vec2 uv;uniform float A,p_sky,TH;
  'float fbm(vec2 p){float s=0.,a=.5;for(int i=0;i<5;i++){s+=a*noise(p);p=p*2.03+vec2(1.7,9.2);a*=.5;}return s;}\n'+
  'vec2 cuv(){return (uv-.5)*vec2(A,1.);}\n'+AG_SKY_SRC;
 // Nachbearbeitung: Lichtschein um Helles, Geschwindigkeits-Wölbung mit Zoom-Unschärfe und Farbversatz, leichte Vignette
-const AG_POST_FS=`precision highp float;varying vec2 uv;uniform sampler2D S,D;uniform float WRP,GLW,ASC,RFL,HD,FOV,AR;uniform vec2 RES,SRS;
+const AG_POST_FS=`precision highp float;varying vec2 uv;uniform sampler2D S,D;uniform float WRP,GLW,ASC,RFL,HD,FOV,AR,AA,BLM;uniform vec2 RES,SRS;uniform sampler2D BL;
 vec3 vpos(vec2 q){float nz=texture2D(D,q).r*2.-1.;float z=44./(220.1-nz*219.9);vec2 nd=q*2.-1.;return vec3(nd.x*AR*z/(2.*FOV),nd.y*z/(2.*FOV),z);}
+// Kantenglättung: Kanten anhand der Helligkeit erkennen und entlang der Kante mitteln
+vec3 fxaa(vec2 p){vec2 r=1./SRS;vec3 L=vec3(.299,.587,.114);vec3 a=texture2D(S,p+vec2(-1.,-1.)*r).rgb,b=texture2D(S,p+vec2(1.,-1.)*r).rgb,c=texture2D(S,p+vec2(-1.,1.)*r).rgb,d=texture2D(S,p+vec2(1.,1.)*r).rgb,m=texture2D(S,p).rgb;
+ float la=dot(a,L),lb=dot(b,L),lc=dot(c,L),ld=dot(d,L),lm=dot(m,L),mn=min(lm,min(min(la,lb),min(lc,ld))),mx=max(lm,max(max(la,lb),max(lc,ld)));
+ vec2 dr=vec2(-((la+lb)-(lc+ld)),(la+lc)-(lb+ld));float rd=max((la+lb+lc+ld)*.03125,.0078);dr=clamp(dr/(min(abs(dr.x),abs(dr.y))+rd),-8.,8.)*r;
+ vec3 A=.5*(texture2D(S,p+dr*(-1./6.)).rgb+texture2D(S,p+dr*(1./6.)).rgb),B=A*.5+.25*(texture2D(S,p-dr*.5).rgb+texture2D(S,p+dr*.5).rgb);float lB=dot(B,L);return (lB<mn||lB>mx)?A:B;}
 vec2 proj(vec3 p){return vec2(p.x*2.*FOV/(AR*p.z),p.y*2.*FOV/p.z)*.5+.5;}
 void main(){
  // Terminal: Strecke und Welt als feine grüne Pixel (4×4, sechs Helligkeitsstufen), Gleiter (Alpha 0) bleiben echtes 3D;
@@ -944,26 +949,35 @@ void main(){
   gl_FragColor=vec4(o,1.);return;}
  vec2 u2=uv;
  if(WRP>.01){vec2 wd=u2-.5;float r2=dot(wd*vec2(1.,1.6),wd*vec2(1.,1.6));u2=.5+wd*(1.-WRP*.16*r2*2.2);}
- vec4 s0=texture2D(S,u2);vec3 col=s0.rgb;
- if(RFL>.5&&s0.a<.98){float m=1.-s0.a,jt=fract(52.9829189*fract(dot(gl_FragCoord.xy,vec2(.06711056,.00583715))));vec3 r=vec3(0.);float ws=0.;
-  for(int i=1;i<=8;i++){float k=float(i)-1.+jt;vec2 q=u2+vec2(0.,(k+.6)*.014);vec3 c=texture2D(S,q).rgb;float w=exp(-k*.3);r+=(max(c-.22,0.)*2.+c*.1)*w;ws+=w;}vec3 refl=r/ws*.5;
+ vec4 s0=texture2D(S,u2);vec3 col=AA>.5?fxaa(u2):s0.rgb;
+ if(RFL>.5&&s0.a<.98){float m=1.-s0.a,jt=.5;vec3 r=vec3(0.);float ws=0.;
+  for(int i=1;i<=14;i++){float k=float(i);vec2 q=u2+vec2(0.,k*.007);vec3 c=texture2D(S,q).rgb;float w=exp(-k*.16);r+=(max(c-.22,0.)*2.+c*.1)*w;ws+=w;}vec3 refl=r/ws*.5;
   if(HD>.5){vec3 P=vpos(u2);vec2 tx=1./SRS;vec3 N=normalize(cross(vpos(u2+vec2(tx.x,0.))-vpos(u2-vec2(tx.x,0.)),vpos(u2+vec2(0.,tx.y))-vpos(u2-vec2(0.,tx.y))));vec3 V=normalize(P);if(dot(N,V)>0.)N=-N;
-   N=normalize(N+vec3(sin(u2.y*330.+u2.x*45.)*.01,0.,cos(u2.y*290.-u2.x*30.)*.01)*m);vec3 R=reflect(V,N);float t=.12+jt*.12,tp=0.;vec2 hit=vec2(-1.);
+   N=normalize(N+vec3(sin(u2.y*90.+u2.x*20.)*.0035,0.,cos(u2.y*70.-u2.x*15.)*.0035)*m);vec3 R=reflect(V,N);float t=.12+jt*.12,tp=0.;vec2 hit=vec2(-1.);
    for(int i=0;i<28;i++){vec3 Q=P+R*t;if(Q.z<.15)break;vec2 q=proj(Q);if(q.x<0.||q.x>1.||q.y<0.||q.y>1.)break;float dz=Q.z-vpos(q).z;
     if(dz>0.&&dz<.35+t*.12){float a=tp,b=t;for(int j=0;j<5;j++){float c=(a+b)*.5;vec3 Qc=P+R*c;if(Qc.z>vpos(proj(Qc)).z)b=c;else a=c;}hit=proj(P+R*b);break;}tp=t;t=t*1.2+.05;}
    if(hit.x>=0.){vec2 e=min(hit,1.-hit);float ef=smoothstep(0.,.07,min(e.x,e.y))*smoothstep(60.,20.,t);float fr=.35+.65*pow(1.-max(0.,dot(-V,N)),3.);
     vec3 hc=texture2D(S,hit).rgb+texture2D(S,hit+vec2(0.,tx.y*1.5)).rgb*.5+texture2D(S,hit-vec2(0.,tx.y*1.5)).rgb*.5;refl=mix(refl,hc*.5*fr*1.25,ef);}}
   col+=refl*m*1.2;}   // nasse Fahrbahn spiegelt
  if(WRP>.01){vec2 wd=u2-.5;float ed=smoothstep(.08,.5,length(wd*vec2(1.,1.4)));vec3 zb=vec3(0.);for(int i=1;i<7;i++){float f=1.-float(i)*.021*WRP;zb+=vec3(texture2D(S,.5+wd*(f-.004*WRP)).r,texture2D(S,.5+wd*f).g,texture2D(S,.5+wd*(f+.004*WRP)).b);}col=mix(col,zb/6.,.85*WRP*ed);}
- vec3 bs=vec3(0.);for(int i=0;i<8;i++){float a=float(i)*.785398+.39;vec2 o=vec2(cos(a),sin(a)*.55)*.012;bs+=max(texture2D(S,uv+o).rgb-.55,0.)+max(texture2D(S,uv+o*2.4).rgb-.55,0.)*.7;}col+=bs*.085*GLW;
+ if(BLM>.5)col+=texture2D(BL,uv).rgb*GLW*1.15;else{vec3 bs=vec3(0.);for(int i=0;i<8;i++){float a=float(i)*.785398+.39;vec2 o=vec2(cos(a),sin(a)*.55)*.012;bs+=max(texture2D(S,uv+o).rgb-.55,0.)+max(texture2D(S,uv+o*2.4).rgb-.55,0.)*.7;}col+=bs*.085*GLW;}
  vec2 vg=uv-.5;col*=1.-.35*dot(vg,vg);
  gl_FragColor=vec4(col,1.);}`;
 const agQuad=(fs)=>agMkProg(gl,AG_QVS,fs,['p']);
+// Glühen: helle Stellen auf ein Viertel verkleinern, dann zweimal weich verwischen (waagrecht, senkrecht)
+const AG_BR_FS='precision highp float;varying vec2 uv;uniform sampler2D S;uniform vec2 TX;void main(){vec3 c=(texture2D(S,uv+vec2(-1.,-1.)*TX).rgb+texture2D(S,uv+vec2(1.,-1.)*TX).rgb+texture2D(S,uv+vec2(-1.,1.)*TX).rgb+texture2D(S,uv+vec2(1.,1.)*TX).rgb)*.25;float l=max(c.r,max(c.g,c.b));gl_FragColor=vec4(c*smoothstep(.42,.9,l),1.);}';
+const AG_BL_FS='precision highp float;varying vec2 uv;uniform sampler2D S;uniform vec2 DIR;void main(){vec3 c=texture2D(S,uv).rgb*.227+(texture2D(S,uv+DIR*1.385).rgb+texture2D(S,uv-DIR*1.385).rgb)*.316+(texture2D(S,uv+DIR*3.23).rgb+texture2D(S,uv-DIR*3.23).rgb)*.07;gl_FragColor=vec4(c,1.);}';
+let AG_BRP=null,AG_BLP=null;try{AG_BRP=agQuad(AG_BR_FS);AG_BLP=agQuad(AG_BL_FS);}catch(e){dl('Glühen: '+e.message);}
+function agBloom(src){if(!AG_BRP||!AG_BLP)return null;const w=Math.max(8,Math.round(src.w/4)),h=Math.max(8,Math.round(src.h/4));
+  if(!v.bl||v.bl[0].w!==w||v.bl[0].h!==h){if(v.bl)v.bl.forEach(b=>{gl.deleteTexture(b.t);gl.deleteFramebuffer(b.f);});v.bl=[agFbo(w,h),agFbo(w,h)];}
+  const [A,B]=v.bl,pass=(pr,dst,tex,set)=>{gl.bindFramebuffer(gl.FRAMEBUFFER,dst.f);gl.viewport(0,0,w,h);gl.useProgram(pr.pg);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tex);gl.uniform1i(pr.u.S,0);set(pr.u);agQuadDraw();};
+  gl.disable(gl.DEPTH_TEST);gl.disable(gl.BLEND);pass(AG_BRP,A,src.t,u=>gl.uniform2f(u.TX,1/src.w,1/src.h));
+  for(const k of [1,2.2]){pass(AG_BLP,B,A.t,u=>gl.uniform2f(u.DIR,k/w,0));pass(AG_BLP,A,B.t,u=>gl.uniform2f(u.DIR,0,k/h));}return A.t;}
 let AG_SKYP=null,AG_POSTP=null;try{AG_SKYP=agQuad(AG_SKY_FS);AG_POSTP=agQuad(AG_POST_FS);}catch(e){dl('Shader: '+e.message);toast('Graphics error: '+e.message,8000);}
 function agFbo(w,h){const t=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,t);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,w,h,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
   const f=gl.createFramebuffer();gl.bindFramebuffer(gl.FRAMEBUFFER,f);gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,t,0);gl.bindFramebuffer(gl.FRAMEBUFFER,null);return {f,t,w,h};}
-function agSize(res){const dpr=Math.min(devicePixelRatio||1,2);const cw=Math.round(innerWidth*dpr*.9),ch=Math.round(innerHeight*dpr*.9);if(cv.width!==cw||cv.height!==ch){cv.width=cw;cv.height=ch;}
+function agSize(res){const hi=agHi(),dpr=Math.min(devicePixelRatio||1,hi?2.6:2),cf=hi?1:.9;const cw=Math.round(innerWidth*dpr*cf),ch=Math.round(innerHeight*dpr*cf);if(cv.width!==cw||cv.height!==ch){cv.width=cw;cv.height=ch;}
   const sw=Math.round(innerWidth*dpr*res),sh=Math.round(innerHeight*dpr*res);
   if(!v.scene||v.scene.w!==sw||v.scene.h!==sh){if(v.scene){gl.deleteTexture(v.scene.t);gl.deleteFramebuffer(v.scene.f);if(v.scene.db)gl.deleteRenderbuffer(v.scene.db);if(v.scene.dt)gl.deleteTexture(v.scene.dt);}v.scene=agFbo(sw,sh);}}
 const agVal=()=>AG_TRK===1?Object.assign({},AG_SET,{sky:0,glow:(AG_SET.glow??1)*.6}):AG_TRK===2?Object.assign({},AG_SET,{sky:1,glow:(AG_SET.glow??1)*1.1}):AG_SET;
@@ -974,12 +988,12 @@ function agMenuCam(g,ts){const {ad,mu}=agV,P=agPoseOf(g.z+2.6,g.lat,0,.16,0),a=t
   return {ro:ad(P.S0,mu(P.rr,Math.sin(a)*r),mu(P.fw,Math.cos(a)*r),[0,1.1+.3*Math.sin(a*1.7),0]),ta:ad(P.S0,[0,-.15,0]),up:[0,1,0]};}
 
 // ---- Bildschleife: gleichmäßige 60 Bilder/s (auf 120-Hz-Displays jedes zweite Bild), Auflösung passt sich der Leistung an
-v.gRes=.85;v.gAcc=0;v.gN=0;v.gWin=0;v.gDn=0;
+v.gRes=agHi()?1:.85;v.gAcc=0;v.gN=0;v.gWin=0;v.gDn=0;
 function agFrame60(ts){requestAnimationFrame(agFrame60);if(!AG_SKYP)return;
   const ri=ts-(v.rawT||ts);v.rawT=ts;if(ri>0&&ri<60)v.rawI=(v.rawI||16.7)*.93+ri*.07;
   if((v.rawI||16.7)<10.8&&ts-(v.gLast||0)<14.2)return;
   const fi=ts-(v.gLast||ts);v.gLast=ts;if(fi>0&&fi<200){v.gAcc+=fi;v.gN++;}
-  if(ts-v.gWin>1000&&v.gN>10){const mean=v.gAcc/v.gN;if(mean>18.8&&v.gRes>.4){v.gRes=Math.max(.4,v.gRes-.05);v.gDn=ts;}else if(mean<17.4&&ts-v.gDn>15000&&v.gRes<1){v.gRes=Math.min(1,v.gRes+.025);v.gDn=ts-9000;}v.gAcc=0;v.gN=0;v.gWin=ts;}
+  if(ts-v.gWin>1000&&v.gN>10){const mean=v.gAcc/v.gN;const gmin=agHi()?.75:.4;if(v.gRes<gmin)v.gRes=gmin;if(mean>18.8&&v.gRes>gmin){v.gRes=Math.max(gmin,v.gRes-.05);v.gDn=ts;}else if(mean<17.4&&ts-v.gDn>15000&&v.gRes<1){v.gRes=Math.min(1,v.gRes+.025);v.gDn=ts-9000;}v.gAcc=0;v.gN=0;v.gWin=ts;}
   agSize(v.gRes);const val=agVal();
   AGT_.pc=val.curvy??1;AGT_.tw=2.4*(val.width??1);AGT_.bkf=val.bank??1;
   let g;
@@ -992,9 +1006,11 @@ function agFrame60(ts){requestAnimationFrame(agFrame60);if(!AG_SKYP)return;
   agQuadDraw();
   // Strecke, Gleiter, Leuchteffekte
   vizShipDraw(v,tgt,val);
+  // weiches Glühen (nur bei hoher Grafik)
+  const blT=agHi()&&AG_TRK!==3?agBloom(tgt):null;
   // aufs Display
   gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,cv.width,cv.height);gl.useProgram(AG_POSTP.pg);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tgt.t);
-  gl.uniform1i(AG_POSTP.u.S,0);gl.uniform1f(AG_POSTP.u.WRP,v.state==='game'?(g&&g.warp||0):0);gl.uniform1f(AG_POSTP.u.GLW,[1,.18,1.25,.6][AG_TRK]);gl.uniform1f(AG_POSTP.u.ASC,AG_TRK===3?1:0);gl.uniform1f(AG_POSTP.u.RFL,agRfl());{const sc=v.scene,hd=sc&&sc.dt&&agRfl()?1:0;gl.uniform1f(AG_POSTP.u.HD,hd);if(hd){gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,sc.dt);gl.activeTexture(gl.TEXTURE0);}gl.uniform1i(AG_POSTP.u.D,1);gl.uniform2f(AG_POSTP.u.SRS,sc?sc.w:1,sc?sc.h:1);gl.uniform1f(AG_POSTP.u.FOV,P.fov);gl.uniform1f(AG_POSTP.u.AR,innerWidth/innerHeight);}gl.uniform2f(AG_POSTP.u.RES,cv.width,cv.height);agQuadDraw();}
+  gl.uniform1i(AG_POSTP.u.S,0);gl.uniform1f(AG_POSTP.u.WRP,v.state==='game'?(g&&g.warp||0):0);gl.uniform1f(AG_POSTP.u.GLW,[1,.18,1.25,.6][AG_TRK]);gl.uniform1f(AG_POSTP.u.ASC,AG_TRK===3?1:0);gl.uniform1f(AG_POSTP.u.RFL,agRfl());gl.uniform1f(AG_POSTP.u.AA,agHi()?1:0);gl.uniform1f(AG_POSTP.u.BLM,blT?1:0);if(blT){gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,blT);gl.activeTexture(gl.TEXTURE0);}gl.uniform1i(AG_POSTP.u.BL,2);{const sc=v.scene,hd=sc&&sc.dt&&agRfl()?1:0;gl.uniform1f(AG_POSTP.u.HD,hd);if(hd){gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,sc.dt);gl.activeTexture(gl.TEXTURE0);}gl.uniform1i(AG_POSTP.u.D,1);gl.uniform2f(AG_POSTP.u.SRS,sc?sc.w:1,sc?sc.h:1);gl.uniform1f(AG_POSTP.u.FOV,P.fov);gl.uniform1f(AG_POSTP.u.AR,innerWidth/innerHeight);}gl.uniform2f(AG_POSTP.u.RES,cv.width,cv.height);agQuadDraw();}
 requestAnimationFrame(agFrame60);
 
 // ---- Spiel starten / beenden
