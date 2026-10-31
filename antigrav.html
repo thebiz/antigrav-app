@@ -853,13 +853,13 @@ function vizShipDraw(v,tgt,val){const gl=v.gl;let SP=null;try{SP=vizShipProg(v);
   gl.uniform1f(u.FOV,P.fov);gl.uniform1f(u.A,innerWidth/innerHeight);gl.uniform1f(u.JET,.4+.9*P.B+1.8*P.boost);gl.uniform1f(u.NT,val.sky??0);gl.uniform1f(u.BO,P.boost);gl.uniform1f(u.BB,0);
   gl.uniform1i(u.TB,0);gl.uniform1i(u.TM,1);gl.uniform1i(u.TE,2);
   gl.enableVertexAttribArray(0);gl.enableVertexAttribArray(1);gl.enableVertexAttribArray(2);
-  const agTn=z=>agInTun(agLz(z),1);const g=v.agg,T=(performance.now()/1000)%3600,ships=g&&(g.out||g.cam&&(g.cam.hide||(g.cam.top&&agTn(g.z+2.6))))?[]:[{sm:g?g.sm:agShipIx(AG_SET.ship),S0:P.S0,SR:P.SR,SUp:P.SUp,SF:P.SF,tint:AG_TRK===3?[.5,1,.6]:[1,1,1],jet:.4+.9*P.B+1.8*P.boost,sh:g&&g.shield>0}];
-  if(g)for(const o of agLive(g)){const d=o.z-g.z;if(d<(g.rep?-30:-6)||d>70)continue;if(g.cam&&g.cam.top&&agTn(o.z+2.6))continue;const q=agPoseOf(o.z+2.6,o.lat,o.roll+(o.spin>0?o.spin*9:0),.16+.012*Math.sin(T*2.7+o.ai)+o.h,o.psi);ships.push({sm:o.sm,S0:q.S0,SR:q.SR,SUp:q.SUp,SF:q.SF,tint:AG_TRK===3?o.tint:[1,1,1],jet:.5+1.6*o.boost});}   // jeder Gegner mit eigenem Gleiter in Originalfarben
+  const agTn=z=>agInTun(agLz(z),1);const g=v.agg,T=(performance.now()/1000)%3600,ships=g&&(g.out||g.cam&&(g.cam.hide||(g.cam.top&&agTn(g.z+2.6))))?[]:[{sm:g?g.sm:agShipIx(AG_SET.ship),S0:P.S0,SR:P.SR,SUp:P.SUp,SF:P.SF,tint:[1,1,1],jet:.4+.9*P.B+1.8*P.boost,sh:g&&g.shield>0}];
+  if(g)for(const o of agLive(g)){const d=o.z-g.z;if(d<(g.rep?-30:-6)||d>70)continue;if(g.cam&&g.cam.top&&agTn(o.z+2.6))continue;const q=agPoseOf(o.z+2.6,o.lat,o.roll+(o.spin>0?o.spin*9:0),.16+.012*Math.sin(T*2.7+o.ai)+o.h,o.psi);ships.push({sm:o.sm,S0:q.S0,SR:q.SR,SUp:q.SUp,SF:q.SF,tint:[1,1,1],jet:.5+1.6*o.boost});}   // jeder Gegner mit eigenem Gleiter in Originalfarben
   // Geist: deine Bestzeit fährt als durchsichtiger Gleiter mit
   {const G=g&&!g.rep&&v.state==='game'&&(AG_SET.ghost!==0||g.solo)&&g.ghT>0?v.ghost:null;if(G){const f=G.f,n=f.length/6,t=g.ghT;let lo=0,hi=n-1;if(n>1&&t<=f[(n-1)*6]){while(hi-lo>1){const m=(lo+hi)>>1;if(f[m*6]<=t)lo=m;else hi=m;}
       const k=Math.max(0,Math.min(1,(t-f[lo*6])/Math.max(1,f[hi*6]-f[lo*6]))),L=j=>f[lo*6+j]+(f[hi*6+j]-f[lo*6+j])*k,d=L(1)-g.z;
       if(d>-6&&d<70){const q=agPoseOf(L(1)+2.6,L(2),L(5),.16+L(3),L(4));ships.push({gh:1,sm:G.sm,S0:q.S0,SR:q.SR,SUp:q.SUp,SF:q.SF,tint:[1,1,1],jet:.6});}}}}
-  for(const sp of ships){const sh=vizShipModel(v,sp.sm||0);if(!sh.ok)continue;gl.uniform1f(u.GH,sp.gh?1:0);f3('S0',sp.S0);f3('SR',sp.SR);f3('SU',sp.SUp);f3('SF',sp.SF);gl.uniform3f(u.TINT,...sp.tint);gl.uniform1f(u.JET,sp.jet);gl.uniform1f(u.SHL,sp.sh?1:0);
+  v._shipsL=ships;for(const sp of ships){const sh=vizShipModel(v,sp.sm||0);if(!sh.ok)continue;gl.uniform1f(u.GH,sp.gh?1:0);f3('S0',sp.S0);f3('SR',sp.SR);f3('SU',sp.SUp);f3('SF',sp.SF);gl.uniform3f(u.TINT,...sp.tint);gl.uniform1f(u.JET,sp.jet);gl.uniform1f(u.SHL,sp.sh?1:0);
   for(const pass of [0,1,2])for(const p of sh.prims){const m=sh.mats[p.mat];const add=m.name==='Glow'||m.name==='Boost';const ps=add?2:m.blend?1:0;if(sp.gh?pass!==0:ps!==pass)continue;
     if(sp.gh){gl.enable(gl.BLEND);gl.blendFunc(gl.ONE,gl.ONE);gl.depthMask(false);}else if(pass===0){gl.disable(gl.BLEND);gl.depthMask(true);}else if(pass===1){gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);}else{gl.enable(gl.BLEND);gl.blendFunc(gl.ONE,gl.ONE);gl.depthMask(false);}
     gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,m.tb);gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,m.tm||m.tb);gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,m.te||m.tb);gl.activeTexture(gl.TEXTURE0);
@@ -867,6 +867,14 @@ function vizShipDraw(v,tgt,val){const gl=v.gl;let SP=null;try{SP=vizShipProg(v);
     gl.bindBuffer(gl.ARRAY_BUFFER,p.pos);gl.vertexAttribPointer(0,3,gl.FLOAT,false,0,0);gl.bindBuffer(gl.ARRAY_BUFFER,p.nrm);gl.vertexAttribPointer(1,3,gl.FLOAT,false,0,0);gl.bindBuffer(gl.ARRAY_BUFFER,p.uv);gl.vertexAttribPointer(2,2,gl.FLOAT,false,0,0);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,p.ib);gl.drawElements(gl.TRIANGLES,p.ni,gl.UNSIGNED_SHORT,0);}}}
   gl.depthMask(true);gl.disable(gl.BLEND);vizAgFx(v,P);
+  // Terminal: Gleiter-Pixel im Alphakanal markieren, damit der Zeichenfilter sie unverändert lässt
+  if(AG_TRK===3&&SP&&v._shipsL){const f3=(k,x)=>gl.uniform3f(u[k],x[0],x[1],x[2]);gl.useProgram(SP.pg);[0,1,2].forEach(i=>gl.enableVertexAttribArray(i));
+    gl.colorMask(false,false,false,true);gl.disable(gl.BLEND);gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);gl.depthMask(false);gl.uniform1f(u.GH,0);gl.uniform1f(u.ADD,0);gl.uniform1f(u.ALP,0);
+    for(const sp of v._shipsL){if(sp.gh)continue;const sh=vizShipModel(v,sp.sm||0);if(!sh.ok)continue;f3('S0',sp.S0);f3('SR',sp.SR);f3('SU',sp.SUp);f3('SF',sp.SF);gl.uniform1f(u.JET,sp.jet);
+      for(const p of sh.prims){const m=sh.mats[p.mat];if(m.blend||m.name==='Glow'||m.name==='Boost')continue;gl.uniform1f(u.ISJ,p.jet?1:0);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,m.tb);
+        gl.bindBuffer(gl.ARRAY_BUFFER,p.pos);gl.vertexAttribPointer(0,3,gl.FLOAT,false,0,0);gl.bindBuffer(gl.ARRAY_BUFFER,p.nrm);gl.vertexAttribPointer(1,3,gl.FLOAT,false,0,0);gl.bindBuffer(gl.ARRAY_BUFFER,p.uv);gl.vertexAttribPointer(2,2,gl.FLOAT,false,0,0);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,p.ib);gl.drawElements(gl.TRIANGLES,p.ni,gl.UNSIGNED_SHORT,0);}}
+    gl.colorMask(true,true,true,true);gl.depthMask(true);}
   gl.depthMask(true);gl.disable(gl.DEPTH_TEST);gl.disable(gl.BLEND);gl.disableVertexAttribArray(1);gl.disableVertexAttribArray(2);
   gl.bindBuffer(gl.ARRAY_BUFFER,v.qbuf);gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,2,gl.FLOAT,false,0,0);if(v.dtex){gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,v.dtex);}}
 
@@ -899,12 +907,12 @@ const AG_SKY_FS='precision highp float;varying vec2 uv;uniform float A,p_sky,TH;
 // Nachbearbeitung: Lichtschein um Helles, Geschwindigkeits-Wölbung mit Zoom-Unschärfe und Farbversatz, leichte Vignette
 const AG_POST_FS=`precision highp float;varying vec2 uv;uniform sampler2D S;uniform float WRP,GLW,ASC;uniform vec2 RES;
 void main(){
- // Terminal: Bild in Zellen, je Zelle ein Zeichen (3×5-Raster, Pixel 3×3) nach Helligkeit: leer . : - + = * O # @
- if(ASC>.5){vec2 px=uv*RES,cs=vec2(11.,18.),ci=floor(px/cs),cc=(ci+.5)*cs/RES,d=cs/RES*.25;
+ // Terminal: Bild in Zellen, je Zelle ein Zeichen (3×5-Raster, Pixel 2×2); Gleiter (Alpha 0 in der Szene) bleiben echtes 3D nach Helligkeit: leer . : - + = * O # @
+ if(ASC>.5){vec4 sc0=texture2D(S,uv);if(sc0.a<.5){gl_FragColor=vec4(sc0.rgb,1.);return;}vec2 px=uv*RES,cs=vec2(8.,13.),ci=floor(px/cs),cc=(ci+.5)*cs/RES,d=cs/RES*.25;
   vec3 c=(texture2D(S,cc-d).rgb+texture2D(S,cc+vec2(d.x,-d.y)).rgb+texture2D(S,cc+vec2(-d.x,d.y)).rgb+texture2D(S,cc+d).rgb)*.25;
   float l=clamp(dot(c,vec3(.3,.55,.15))*1.75,0.,1.),mx=max(c.r,max(c.g,c.b)),ch=mx-min(c.r,min(c.g,c.b)),gi=floor(pow(l,.75)*9.99);
   float gv=gi<.5?0.:gi<1.5?8192.:gi<2.5?1040.:gi<3.5?448.:gi<4.5?1488.:gi<5.5?3640.:gi<6.5?2728.:gi<7.5?31599.:gi<8.5?24445.:32639.;
-  vec2 gp=floor((px-ci*cs-vec2(1.,1.5))/3.);float on=0.;if(gp.x>=0.&&gp.x<3.&&gp.y>=0.&&gp.y<5.)on=mod(floor(gv/exp2((4.-gp.y)*3.+gp.x)),2.);
+  vec2 gp=floor((px-ci*cs-vec2(1.,1.5))/2.);float on=0.;if(gp.x>=0.&&gp.x<3.&&gp.y>=0.&&gp.y<5.)on=mod(floor(gv/exp2((4.-gp.y)*3.+gp.x)),2.);
   vec3 tc=ch>.2?c/max(mx,.001):(l>.85?vec3(.85,1.,.9):vec3(.25,1.,.4));
   gl_FragColor=vec4(tc*on*(.35+.9*l)+vec3(0.,.025,.01),1.);return;}
  vec2 u2=uv;
