@@ -907,14 +907,15 @@ const AG_SKY_FS='precision highp float;varying vec2 uv;uniform float A,p_sky,TH;
 // Nachbearbeitung: Lichtschein um Helles, Geschwindigkeits-Wölbung mit Zoom-Unschärfe und Farbversatz, leichte Vignette
 const AG_POST_FS=`precision highp float;varying vec2 uv;uniform sampler2D S;uniform float WRP,GLW,ASC;uniform vec2 RES;
 void main(){
- // Terminal: Bild in Zellen, je Zelle ein Zeichen (3×5-Raster, Pixel 2×2); Gleiter (Alpha 0 in der Szene) bleiben echtes 3D nach Helligkeit: leer . : - + = * O # @
- if(ASC>.5){vec4 sc0=texture2D(S,uv);if(sc0.a<.5){gl_FragColor=vec4(sc0.rgb,1.);return;}vec2 px=uv*RES,cs=vec2(8.,13.),ci=floor(px/cs),cc=(ci+.5)*cs/RES,d=cs/RES*.25;
-  vec3 c=(texture2D(S,cc-d).rgb+texture2D(S,cc+vec2(d.x,-d.y)).rgb+texture2D(S,cc+vec2(-d.x,d.y)).rgb+texture2D(S,cc+d).rgb)*.25;
-  float l=clamp(dot(c,vec3(.3,.55,.15))*1.75,0.,1.),mx=max(c.r,max(c.g,c.b)),ch=mx-min(c.r,min(c.g,c.b)),gi=floor(pow(l,.75)*9.99);
-  float gv=gi<.5?0.:gi<1.5?8192.:gi<2.5?1040.:gi<3.5?448.:gi<4.5?1488.:gi<5.5?3640.:gi<6.5?2728.:gi<7.5?31599.:gi<8.5?24445.:32639.;
-  vec2 gp=floor((px-ci*cs-vec2(1.,1.5))/2.);float on=0.;if(gp.x>=0.&&gp.x<3.&&gp.y>=0.&&gp.y<5.)on=mod(floor(gv/exp2((4.-gp.y)*3.+gp.x)),2.);
-  vec3 tc=ch>.2?c/max(mx,.001):(l>.85?vec3(.85,1.,.9):vec3(.25,1.,.4));
-  gl_FragColor=vec4(tc*on*(.35+.9*l)+vec3(0.,.025,.01),1.);return;}
+ // Terminal: Strecke und Welt als feine grüne Pixel (4×4, sechs Helligkeitsstufen), Gleiter (Alpha 0) bleiben echtes 3D;
+ // darüber Röhrenmonitor: Scanlines, dunklere Ecken, leicht fleckige, ungleichmäßige Helligkeit
+ if(ASC>.5){vec4 sc0=texture2D(S,uv);vec2 px=uv*RES;vec3 o;
+  if(sc0.a<.5)o=sc0.rgb;else{vec2 cs=vec2(4.);vec3 c=texture2D(S,(floor(px/cs)+.5)*cs/RES).rgb;
+   float l=clamp(dot(c,vec3(.3,.55,.15))*1.75,0.,1.),mx=max(c.r,max(c.g,c.b)),ch=mx-min(c.r,min(c.g,c.b)),q=floor(pow(l,.8)*6.+.5)/6.;
+   vec3 tc=ch>.2?c/max(mx,.001):(l>.85?vec3(.85,1.,.9):vec3(.25,1.,.4));o=tc*q+vec3(0.,.02,.008);vec2 f=fract(px/cs);o*=.8+.2*step(.25,f.x)*step(.25,f.y);}
+  o*=.76+.24*step(.5,fract(px.y*.5));vec2 vg=(uv-.5)*vec2(1.,.8);o*=1.18-1.1*dot(vg,vg);
+  o*=.9+.08*sin(uv.x*5.3+1.)*sin(uv.y*4.1+2.)+.05*sin(uv.x*13.+uv.y*7.+.5);
+  gl_FragColor=vec4(o,1.);return;}
  vec2 u2=uv;
  if(WRP>.01){vec2 wd=u2-.5;float r2=dot(wd*vec2(1.,1.6),wd*vec2(1.,1.6));u2=.5+wd*(1.-WRP*.16*r2*2.2);}
  vec3 col=texture2D(S,u2).rgb;
