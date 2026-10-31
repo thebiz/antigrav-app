@@ -70,7 +70,7 @@ void main(){vec4 tb=texture2D(TB,vt);vec3 alb=pow(tb.rgb,vec3(2.2));float lm=dot
  col+=vec3(.3,.7,1.)*SHL*(.4+.4*fr);
  if(GH>.5){float rim=pow(1.-max(0.,dot(n,-vd)),2.);gl_FragColor=vec4(vec3(.3,.75,1.)*(.12+.95*rim)+vec3(.5,.8,1.)*lm*.6,1.);return;}   // Geist: durchsichtig, leuchtende Kanten
  col=(col*(2.51*col+.03))/(col*(2.43*col+.59)+.14);col=pow(clamp(col,0.,1.),vec3(.95));
- gl_FragColor=vec4(col,ADD>.5?1.:tb.a*ALP);}`;
+ gl_FragColor=vec4(col,ADD>.5?0.:tb.a*ALP);}`;
 // Alle Gleiter: gleiches Format, gleiche Länge (Nase vorn bei +z), eigene Düsenlage (eng = Höhe, z hinten)
 const AG_SHIPS=[
  {id:'feisar',nm:'Feisar',cr:'“WipeOut – Feisar” by Nobby76, CC BY 4.0'},
@@ -631,7 +631,7 @@ const AG_FFS=`precision highp float;varying vec2 vu;varying vec4 vc;varying floa
 void main(){float a;if(vty<1.5){float r=length(vu);a=exp(-r*r*4.)*smoothstep(1.,.8,r);}else if(vty<2.5){float r=length(vu);a=exp(-pow((r-.72)*7.,2.))*smoothstep(1.,.9,r);}
  else if(vty<3.5){a=exp(-vu.x*vu.x*4.)*smoothstep(1.,.6,abs(vu.y));}else if(vty>5.5){float ex=max(abs(vu.x),abs(vu.y));float hx=abs(fract(vu.y*9.+vu.x*.0)-.5);a=.16+.55*smoothstep(.9,1.,ex)+.18*smoothstep(.12,.0,hx)+.08*sin(vu.x*30.+vu.y*12.);a*=smoothstep(1.,.97,ex);}
  else if(vty>4.5){float r=length(vu);a=exp(-pow((r-.82)*9.,2.))*smoothstep(1.,.92,r)+exp(-pow((r-.6)*4.,2.))*.25*smoothstep(1.,.6,r);}else{a=exp(-vu.x*vu.x*4.)*(1.-(vu.y*.5+.5))*smoothstep(-1.,-.7,vu.y);}
- gl_FragColor=vec4(vc.rgb*vc.a*a,1.);}`;
+ gl_FragColor=vec4(vc.rgb*vc.a*a,0.);}`;
 function agMkProg(gl,vs,fs,attrs){const c=(t,src)=>{const s=gl.createShader(t);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));return s;};
   const pg=gl.createProgram();gl.attachShader(pg,c(gl.VERTEX_SHADER,vs));gl.attachShader(pg,c(gl.FRAGMENT_SHADER,fs));attrs.forEach((a,i)=>gl.bindAttribLocation(pg,i,a));gl.linkProgram(pg);
   if(!gl.getProgramParameter(pg,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(pg));const u=new Proxy({},{get:(o,k)=>k in o?o[k]:(o[k]=gl.getUniformLocation(pg,k))});return {pg,u};}
@@ -863,8 +863,12 @@ function agToyDraw(v,P){if(AG_TRK===3||(!AG_TRK&&!agHi()))return;const TC=AG_TRK
     const a=T*(1.5+hs(j,11)*2)+j,X=[Math.cos(a),Math.sin(a)*.5,Math.sin(a)*.6],Yp=nz(cr(X,[0,0,1])),Zp=cr(X,Yp);ell(pos,X,Yp,Zp,[.09,.02,.065],hs(j,12)<.5?AG_PC.pk:AG_PC.sw);}
   gl.disableVertexAttribArray(1);}
 function vizShipDraw(v,tgt,val){const gl=v.gl;let SP=null;try{SP=vizShipProg(v);}catch(e){if(!v.shipErr){v.shipErr=1;dl('Gleiter-Shader: '+e.message);}}AG_SHIPS.forEach((_,i)=>vizShipModel(v,i));const P=vizAgPose(v,val),u=SP&&SP.u;
-  if(tgt.f&&(!tgt.db||tgt.dbw!==tgt.w||tgt.dbh!==tgt.h)){if(!tgt.db)tgt.db=gl.createRenderbuffer();gl.bindRenderbuffer(gl.RENDERBUFFER,tgt.db);gl.renderbufferStorage(gl.RENDERBUFFER,gl.DEPTH_STENCIL,tgt.w,tgt.h);tgt.dbw=tgt.w;tgt.dbh=tgt.h;
-    gl.bindFramebuffer(gl.FRAMEBUFFER,tgt.f);gl.framebufferRenderbuffer(gl.FRAMEBUFFER,gl.DEPTH_STENCIL_ATTACHMENT,gl.RENDERBUFFER,tgt.db);}
+  if(tgt.f&&(!(tgt.db||tgt.dt)||tgt.dbw!==tgt.w||tgt.dbh!==tgt.h)){tgt.dbw=tgt.w;tgt.dbh=tgt.h;gl.bindFramebuffer(gl.FRAMEBUFFER,tgt.f);
+    if(v.dtx===undefined)v.dtx=gl.getExtension('WEBGL_depth_texture');
+    if(v.dtx&&!v.dtxBad){if(!tgt.dt)tgt.dt=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,tgt.dt);gl.texImage2D(gl.TEXTURE_2D,0,gl.DEPTH_COMPONENT,tgt.w,tgt.h,0,gl.DEPTH_COMPONENT,gl.UNSIGNED_INT,null);
+      [gl.TEXTURE_MIN_FILTER,gl.TEXTURE_MAG_FILTER].forEach(k=>gl.texParameteri(gl.TEXTURE_2D,k,gl.NEAREST));[gl.TEXTURE_WRAP_S,gl.TEXTURE_WRAP_T].forEach(k=>gl.texParameteri(gl.TEXTURE_2D,k,gl.CLAMP_TO_EDGE));
+      gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.DEPTH_ATTACHMENT,gl.TEXTURE_2D,tgt.dt,0);if(gl.checkFramebufferStatus(gl.FRAMEBUFFER)!==gl.FRAMEBUFFER_COMPLETE){v.dtxBad=1;gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.DEPTH_ATTACHMENT,gl.TEXTURE_2D,null,0);gl.deleteTexture(tgt.dt);tgt.dt=null;}}
+    if(!tgt.dt){if(!tgt.db)tgt.db=gl.createRenderbuffer();gl.bindRenderbuffer(gl.RENDERBUFFER,tgt.db);gl.renderbufferStorage(gl.RENDERBUFFER,gl.DEPTH_STENCIL,tgt.w,tgt.h);gl.framebufferRenderbuffer(gl.FRAMEBUFFER,gl.DEPTH_STENCIL_ATTACHMENT,gl.RENDERBUFFER,tgt.db);}}
   gl.bindFramebuffer(gl.FRAMEBUFFER,tgt.f);gl.viewport(0,0,tgt.w,tgt.h);gl.depthMask(true);gl.clear(gl.DEPTH_BUFFER_BIT);gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);
   agToyDraw(v,P);vizAgScene(v,tgt,val,P);gl.enable(gl.DEPTH_TEST);
   if(SP){gl.useProgram(SP.pg);const f3=(k,x)=>gl.uniform3f(u[k],x[0],x[1],x[2]);
@@ -925,7 +929,9 @@ const AG_SKY_FS='precision highp float;varying vec2 uv;uniform float A,p_sky,TH;
  'float fbm(vec2 p){float s=0.,a=.5;for(int i=0;i<5;i++){s+=a*noise(p);p=p*2.03+vec2(1.7,9.2);a*=.5;}return s;}\n'+
  'vec2 cuv(){return (uv-.5)*vec2(A,1.);}\n'+AG_SKY_SRC;
 // Nachbearbeitung: Lichtschein um Helles, Geschwindigkeits-Wölbung mit Zoom-Unschärfe und Farbversatz, leichte Vignette
-const AG_POST_FS=`precision highp float;varying vec2 uv;uniform sampler2D S;uniform float WRP,GLW,ASC,RFL;uniform vec2 RES;
+const AG_POST_FS=`precision highp float;varying vec2 uv;uniform sampler2D S,D;uniform float WRP,GLW,ASC,RFL,HD,FOV,AR;uniform vec2 RES,SRS;
+vec3 vpos(vec2 q){float nz=texture2D(D,q).r*2.-1.;float z=44./(220.1-nz*219.9);vec2 nd=q*2.-1.;return vec3(nd.x*AR*z/(2.*FOV),nd.y*z/(2.*FOV),z);}
+vec2 proj(vec3 p){return vec2(p.x*2.*FOV/(AR*p.z),p.y*2.*FOV/p.z)*.5+.5;}
 void main(){
  // Terminal: Strecke und Welt als feine grüne Pixel (4×4, sechs Helligkeitsstufen), Gleiter (Alpha 0) bleiben echtes 3D;
  // darüber Röhrenmonitor: Scanlines, dunklere Ecken, leicht fleckige, ungleichmäßige Helligkeit
@@ -939,7 +945,15 @@ void main(){
  vec2 u2=uv;
  if(WRP>.01){vec2 wd=u2-.5;float r2=dot(wd*vec2(1.,1.6),wd*vec2(1.,1.6));u2=.5+wd*(1.-WRP*.16*r2*2.2);}
  vec4 s0=texture2D(S,u2);vec3 col=s0.rgb;
- if(RFL>.5&&s0.a<.98){float m=1.-s0.a,jt=fract(sin(dot(gl_FragCoord.xy,vec2(12.9898,78.233)))*43758.5453);vec3 r=vec3(0.);float ws=0.;for(int i=1;i<=12;i++){float k=float(i)-1.+jt;vec2 q=u2+vec2(sin(u2.y*240.+k)*.0015*m,(k+.6)*.011);vec3 c=texture2D(S,q).rgb;float w=exp(-k*.2);r+=(max(c-.22,0.)*2.+c*.12)*w;ws+=w;}col+=r/ws*m*1.05;}   // nasse Fahrbahn spiegelt
+ if(RFL>.5&&s0.a<.98){float m=1.-s0.a,jt=fract(52.9829189*fract(dot(gl_FragCoord.xy,vec2(.06711056,.00583715))));vec3 r=vec3(0.);float ws=0.;
+  for(int i=1;i<=8;i++){float k=float(i)-1.+jt;vec2 q=u2+vec2(0.,(k+.6)*.014);vec3 c=texture2D(S,q).rgb;float w=exp(-k*.3);r+=(max(c-.22,0.)*2.+c*.1)*w;ws+=w;}vec3 refl=r/ws*.5;
+  if(HD>.5){vec3 P=vpos(u2);vec2 tx=1./SRS;vec3 N=normalize(cross(vpos(u2+vec2(tx.x,0.))-vpos(u2-vec2(tx.x,0.)),vpos(u2+vec2(0.,tx.y))-vpos(u2-vec2(0.,tx.y))));vec3 V=normalize(P);if(dot(N,V)>0.)N=-N;
+   N=normalize(N+vec3(sin(u2.y*330.+u2.x*45.)*.01,0.,cos(u2.y*290.-u2.x*30.)*.01)*m);vec3 R=reflect(V,N);float t=.12+jt*.12,tp=0.;vec2 hit=vec2(-1.);
+   for(int i=0;i<28;i++){vec3 Q=P+R*t;if(Q.z<.15)break;vec2 q=proj(Q);if(q.x<0.||q.x>1.||q.y<0.||q.y>1.)break;float dz=Q.z-vpos(q).z;
+    if(dz>0.&&dz<.35+t*.12){float a=tp,b=t;for(int j=0;j<5;j++){float c=(a+b)*.5;vec3 Qc=P+R*c;if(Qc.z>vpos(proj(Qc)).z)b=c;else a=c;}hit=proj(P+R*b);break;}tp=t;t=t*1.2+.05;}
+   if(hit.x>=0.){vec2 e=min(hit,1.-hit);float ef=smoothstep(0.,.07,min(e.x,e.y))*smoothstep(60.,20.,t);float fr=.35+.65*pow(1.-max(0.,dot(-V,N)),3.);
+    vec3 hc=texture2D(S,hit).rgb+texture2D(S,hit+vec2(0.,tx.y*1.5)).rgb*.5+texture2D(S,hit-vec2(0.,tx.y*1.5)).rgb*.5;refl=mix(refl,hc*.5*fr*1.25,ef);}}
+  col+=refl*m*1.2;}   // nasse Fahrbahn spiegelt
  if(WRP>.01){vec2 wd=u2-.5;float ed=smoothstep(.08,.5,length(wd*vec2(1.,1.4)));vec3 zb=vec3(0.);for(int i=1;i<7;i++){float f=1.-float(i)*.021*WRP;zb+=vec3(texture2D(S,.5+wd*(f-.004*WRP)).r,texture2D(S,.5+wd*f).g,texture2D(S,.5+wd*(f+.004*WRP)).b);}col=mix(col,zb/6.,.85*WRP*ed);}
  vec3 bs=vec3(0.);for(int i=0;i<8;i++){float a=float(i)*.785398+.39;vec2 o=vec2(cos(a),sin(a)*.55)*.012;bs+=max(texture2D(S,uv+o).rgb-.55,0.)+max(texture2D(S,uv+o*2.4).rgb-.55,0.)*.7;}col+=bs*.085*GLW;
  vec2 vg=uv-.5;col*=1.-.35*dot(vg,vg);
@@ -951,7 +965,7 @@ function agFbo(w,h){const t=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,t);g
   const f=gl.createFramebuffer();gl.bindFramebuffer(gl.FRAMEBUFFER,f);gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,t,0);gl.bindFramebuffer(gl.FRAMEBUFFER,null);return {f,t,w,h};}
 function agSize(res){const dpr=Math.min(devicePixelRatio||1,2);const cw=Math.round(innerWidth*dpr*.9),ch=Math.round(innerHeight*dpr*.9);if(cv.width!==cw||cv.height!==ch){cv.width=cw;cv.height=ch;}
   const sw=Math.round(innerWidth*dpr*res),sh=Math.round(innerHeight*dpr*res);
-  if(!v.scene||v.scene.w!==sw||v.scene.h!==sh){if(v.scene){gl.deleteTexture(v.scene.t);gl.deleteFramebuffer(v.scene.f);if(v.scene.db)gl.deleteRenderbuffer(v.scene.db);}v.scene=agFbo(sw,sh);}}
+  if(!v.scene||v.scene.w!==sw||v.scene.h!==sh){if(v.scene){gl.deleteTexture(v.scene.t);gl.deleteFramebuffer(v.scene.f);if(v.scene.db)gl.deleteRenderbuffer(v.scene.db);if(v.scene.dt)gl.deleteTexture(v.scene.dt);}v.scene=agFbo(sw,sh);}}
 const agVal=()=>AG_TRK===1?Object.assign({},AG_SET,{sky:0,glow:(AG_SET.glow??1)*.6}):AG_TRK===2?Object.assign({},AG_SET,{sky:1,glow:(AG_SET.glow??1)*1.1}):AG_SET;
 function agQuadDraw(){gl.bindBuffer(gl.ARRAY_BUFFER,v.qbuf);gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,2,gl.FLOAT,false,0,0);gl.drawArrays(gl.TRIANGLE_STRIP,0,4);}
 
@@ -980,7 +994,7 @@ function agFrame60(ts){requestAnimationFrame(agFrame60);if(!AG_SKYP)return;
   vizShipDraw(v,tgt,val);
   // aufs Display
   gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,cv.width,cv.height);gl.useProgram(AG_POSTP.pg);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tgt.t);
-  gl.uniform1i(AG_POSTP.u.S,0);gl.uniform1f(AG_POSTP.u.WRP,v.state==='game'?(g&&g.warp||0):0);gl.uniform1f(AG_POSTP.u.GLW,[1,.18,1.25,.6][AG_TRK]);gl.uniform1f(AG_POSTP.u.ASC,AG_TRK===3?1:0);gl.uniform1f(AG_POSTP.u.RFL,agRfl());gl.uniform2f(AG_POSTP.u.RES,cv.width,cv.height);agQuadDraw();}
+  gl.uniform1i(AG_POSTP.u.S,0);gl.uniform1f(AG_POSTP.u.WRP,v.state==='game'?(g&&g.warp||0):0);gl.uniform1f(AG_POSTP.u.GLW,[1,.18,1.25,.6][AG_TRK]);gl.uniform1f(AG_POSTP.u.ASC,AG_TRK===3?1:0);gl.uniform1f(AG_POSTP.u.RFL,agRfl());{const sc=v.scene,hd=sc&&sc.dt&&agRfl()?1:0;gl.uniform1f(AG_POSTP.u.HD,hd);if(hd){gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,sc.dt);gl.activeTexture(gl.TEXTURE0);}gl.uniform1i(AG_POSTP.u.D,1);gl.uniform2f(AG_POSTP.u.SRS,sc?sc.w:1,sc?sc.h:1);gl.uniform1f(AG_POSTP.u.FOV,P.fov);gl.uniform1f(AG_POSTP.u.AR,innerWidth/innerHeight);}gl.uniform2f(AG_POSTP.u.RES,cv.width,cv.height);agQuadDraw();}
 requestAnimationFrame(agFrame60);
 
 // ---- Spiel starten / beenden
